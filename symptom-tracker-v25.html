@@ -1,0 +1,3080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Symptom Log</title>
+<style>
+:root {
+  --bg:       #0f1117;
+  --surface:  #1a1d27;
+  --card:     #21253a;
+  --border:   #2e3348;
+  --accent:   #6c8eff;
+  --accent-bg:#1c2245;
+  --better:   #3ecf8e;
+  --same:     #f0c040;
+  --worse:    #f06060;
+  --none-col: #555c7a;
+  --mild:     #3ecf8e;
+  --moderate: #f0c040;
+  --severe:   #f06060;
+  --text:     #e8eaf6;
+  --subtext:  #8890b0;
+  --nav-h:    68px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  overflow: hidden; }
+
+/* ── Shell ── */
+#app { display: flex; flex-direction: column; height: 100dvh; }
+.screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.screen.active { display: flex; }
+
+/* ── Bottom Nav ── */
+nav {
+  display: flex; background: var(--surface);
+  border-top: 1px solid var(--border);
+  height: var(--nav-h); flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px; cursor: pointer;
+  border: none; background: none; color: var(--subtext);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+  transition: color .15s; padding-top: 6px;
+}
+.nav-item.active { color: var(--accent); }
+
+/* ── Log screen ── */
+#log-screen { padding: 0; }
+
+.log-top {
+  padding: 18px 20px 12px;
+  flex-shrink: 0;
+}
+.log-date-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.date-nav {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.date-nav:active { opacity: .6; }
+.date-label { flex: 1; text-align: center; font-size: 17px; font-weight: 700; }
+.today-btn {
+  height: 34px; font-size: 12px; font-weight: 600; color: var(--accent);
+  background: var(--accent-bg); border: none; border-radius: 8px;
+  padding: 0 12px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* period chips */
+.period-chips { display: flex; gap: 6px; }
+.pchip {
+  flex: 1; padding: 8px 4px; text-align: center; font-size: 12px; font-weight: 600;
+  border-radius: 9px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--subtext); cursor: pointer;
+  transition: all .15s;
+}
+.pchip.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+
+/* ── Symptom carousel ── */
+.carousel-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 0 20px 20px; overflow-y: auto;
+}
+
+/* step dots */
+.step-dots {
+  display: flex; justify-content: center; gap: 7px;
+  padding: 14px 0 18px; flex-shrink: 0;
+}
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border); transition: all .2s;
+}
+.dot.active { background: var(--accent); width: 20px; border-radius: 4px; }
+.dot.done   { background: var(--accent); opacity: .45; }
+
+/* symptom hero */
+.symptom-hero {
+  flex-shrink: 0; margin-bottom: 22px; text-align: center;
+}
+.symptom-number { font-size: 12px; color: var(--subtext); letter-spacing: 0.8px;
+  text-transform: uppercase; margin-bottom: 6px; }
+.symptom-big-name {
+  font-size: 32px; font-weight: 800; letter-spacing: -0.8px;
+  line-height: 1.1; color: var(--text);
+}
+.symptom-prev {
+  font-size: 13px; color: var(--subtext); margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;
+}
+
+/* choice sections */
+.choice-section { margin-bottom: 14px; flex-shrink: 0; }
+.choice-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.9px; color: var(--subtext); margin-bottom: 8px;
+  padding-left: 2px;
+}
+.choice-row { display: flex; gap: 8px; }
+
+.choice-btn {
+  flex: 1; padding: 14px 6px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--surface);
+  color: var(--subtext); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .15s; text-align: center;
+  line-height: 1.3;
+  min-height: 73px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.choice-btn:active { transform: scale(.95); }
+.choice-btn .choice-icon { font-size: 18px; display: block; margin-bottom: 3px; }
+
+/* Trend colors — 3 buttons, 2-tap escalation */
+.choice-btn.better { border-color: var(--better); color: var(--better); }
+.choice-btn.same   { border-color: var(--same);   color: var(--same); }
+.choice-btn.worse  { border-color: var(--worse);  color: var(--worse); }
+
+/* First tap — medium intensity */
+.choice-btn.better.sel { background: #27a06e; border-color: #27a06e; color: #0f1117; }
+.choice-btn.same.sel   { background: var(--same); color: #0f1117; }
+.choice-btn.worse.sel  { background: #d05555; border-color: #d05555; color: #fff; }
+
+/* Second tap — full intensity "much" state */
+.choice-btn.better.sel-max { background: #3ecf8e; border-color: #3ecf8e; color: #0f1117; }
+.choice-btn.worse.sel-max  { background: #f06060; border-color: #f06060; color: #fff; }
+
+/* Level colors */
+.choice-btn.lv-none { border-color: var(--none-col); color: var(--subtext); }
+.choice-btn.lv-mild { border-color: var(--mild);     color: var(--mild); }
+.choice-btn.lv-mod  { border-color: var(--moderate); color: var(--moderate); }
+.choice-btn.lv-sev  { border-color: var(--severe);   color: var(--severe); }
+.choice-btn.lv-none.sel { background: var(--none-col); color: var(--text); }
+.choice-btn.lv-mild.sel { background: var(--mild);     color: #0f1117; }
+.choice-btn.lv-mod.sel  { background: var(--moderate); color: #0f1117; }
+.choice-btn.lv-sev.sel  { background: var(--severe);   color: #fff; }
+
+/* carousel nav footer */
+.carousel-footer {
+  flex-shrink: 0; display: flex; gap: 10px; margin-top: auto; padding-top: 10px;
+}
+.cf-btn {
+  flex: 1; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 700;
+  border: none; cursor: pointer; transition: opacity .15s, transform .1s;
+}
+.cf-btn:active { transform: scale(.96); }
+.cf-prev { background: var(--surface); color: var(--subtext); border: 1px solid var(--border); flex: 0 0 54px; }
+.cf-next { background: var(--accent); color: #fff; }
+.cf-save { background: var(--better); color: #0f1117; }
+
+/* empty state */
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 30px; color: var(--subtext);
+}
+.empty-icon { font-size: 44px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+.empty-state p  { font-size: 14px; line-height: 1.6; }
+.empty-state .go-btn {
+  margin-top: 20px; padding: 12px 24px; border-radius: 12px;
+  background: var(--accent); color: #fff; border: none;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+}
+
+/* ── History screen ── */
+#history-screen { overflow-y: auto; padding: 20px; }
+
+.history-header { /* styling now provided by .screen-header */ }
+
+.timeline-group { margin-bottom: 24px; }
+.timeline-date {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--accent); margin-bottom: 10px;
+}
+.timeline-entry {
+  display: flex; gap: 12px; margin-bottom: 6px;
+}
+.tl-left { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; }
+.tl-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  margin-top: 4px;
+}
+.tl-line { flex: 1; width: 1px; background: var(--border); margin-top: 4px; }
+.tl-content { flex: 1; padding-bottom: 8px; }
+.tl-period { font-size: 12px; color: var(--subtext); margin-bottom: 4px; }
+.tl-symptoms { display: flex; flex-direction: column; gap: 4px; }
+.tl-sym-row { display: flex; align-items: center; gap: 7px; font-size: 14px; }
+.tl-sym-name { flex: 1; }
+
+/* EXPERIMENTAL (v11b): column-aligned trend/status pills */
+.tl-row-grid {
+  display: grid; grid-template-columns: minmax(0,1fr) 78px 78px;
+  align-items: center; column-gap: 6px; font-size: 14px;
+}
+.tl-row-grid .tl-sym-name {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.tl-badge-col { min-width: 0; }
+.tl-badge-col .badge {
+  display: inline-block; white-space: normal; text-align: left; line-height: 1.25;
+  word-break: keep-all;
+}
+.badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.b-better        { background: #1a3a2a; color: #27a06e; }
+.b-much-better   { background: #1a3a2a; color: var(--better); }
+.b-same          { background: #3a3010; color: var(--same); }
+.b-worse         { background: #3a1a1a; color: #d05555; }
+.b-much-worse    { background: #3a1a1a; color: var(--worse); }
+.b-none     { background: #2a2d3a; color: var(--subtext); }
+.b-mild     { background: #1a3a2a; color: var(--mild); }
+.b-moderate { background: #3a3010; color: var(--moderate); }
+.b-severe   { background: #3a1a1a; color: var(--severe); }
+
+/* ── Symptoms screen ── */
+#symptoms-screen { overflow-y: auto; padding: 20px; }
+.sym-header { /* styling now provided by .screen-header */ }
+
+.sym-add-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px; margin-bottom: 18px;
+}
+.sym-input-row { display: flex; gap: 10px; }
+.sym-input {
+  flex: 1; padding: 13px 14px; border-radius: 11px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.sym-input:focus { outline: none; border-color: var(--accent); }
+.sym-add-btn {
+  padding: 13px 16px; border-radius: 11px; background: var(--surface);
+  color: var(--subtext); border: 1px solid var(--border);
+  font-size: 20px; font-weight: 700; cursor: default; flex-shrink: 0;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.sym-add-btn.ready {
+  background: var(--accent); color: #fff; border-color: var(--accent); cursor: pointer;
+}
+.sym-add-btn.ready:active { opacity: .75; }
+
+.sym-list-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden;
+}
+.sym-row {
+  display: flex; align-items: center; padding: 15px 16px;
+  border-bottom: 1px solid var(--border); gap: 10px;
+}
+.sym-row:last-child { border-bottom: none; }
+.sym-drag { color: var(--border); font-size: 18px; cursor: grab; }
+.sym-row-name { flex: 1; font-size: 16px; font-weight: 600; }
+.sym-del {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: #2a1a1a; border: 1px solid #4a2a2a;
+  color: var(--worse); font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Category selector (Symptoms tab) ── */
+.cat-selector { display: flex; gap: 6px; margin-bottom: 12px; }
+.cat-btn {
+  flex: 1; padding: 8px 4px; text-align: center; font-size: 14px; font-weight: 600;
+  border-radius: 9px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--subtext); cursor: pointer; transition: all .15s;
+}
+.cat-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+
+/* ── Category header in symptom list ── */
+.sym-cat-header {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--subtext);
+  padding: 10px 0 6px;
+}
+.sym-item-row {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 9px 10px; margin-bottom: 6px;
+  color: var(--subtext); font-size: 14px;
+}
+.sym-item-row:last-child { margin-bottom: 0; }
+.sym-item-name { flex: 1; }
+.sym-item-active { color: var(--accent); border-color: var(--accent); }
+.sym-item-active .profile-action-btn { color: var(--accent); border-color: var(--accent); }
+.profile-name-tap {
+  flex: 1; text-align: left; background: none; border: none;
+  color: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Category header in history ── */
+.history-cat-header {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.9px; color: var(--subtext);
+  margin: 22px 0 10px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.history-cat-section:first-child .history-cat-header { margin-top: 0; border-top: none; padding-top: 0; }
+.date-cat-section { margin-bottom: 6px; }
+.date-cat-header {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.7px; color: var(--subtext);
+  margin: 8px 0 4px; opacity: 0.7;
+}
+.date-cat-section:first-child .date-cat-header { margin-top: 2px; }
+
+/* ── Face emoji buttons (General category) ── */
+.face-emoji { font-size: 26px; line-height: 1; }
+.choice-btn.face-terrible { border-color: #f06060; }
+.choice-btn.face-poor     { border-color: #d05555; }
+.choice-btn.face-neutral  { border-color: #f0c040; }
+.choice-btn.face-good     { border-color: #27a06e; }
+.choice-btn.face-great    { border-color: #3ecf8e; }
+.choice-btn.face-terrible.sel { background: #f06060; }
+.choice-btn.face-poor.sel     { background: #d05555; }
+.choice-btn.face-neutral.sel  { background: #f0c040; }
+.choice-btn.face-good.sel     { background: #27a06e; }
+.choice-btn.face-great.sel    { background: #3ecf8e; }
+
+/* ── Occurrences: time display + hidden input + notes ── */
+.time-wrap { position: relative; }
+.time-display {
+  width: 100%; padding: 14px 16px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--surface);
+  color: var(--subtext); font-size: 22px; font-weight: 700;
+  text-align: center; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 54px; user-select: none;
+}
+.time-display.time-is-set { color: var(--text); border-color: var(--accent); }
+.time-input {
+  width: 100%; padding: 14px 16px; border-radius: 12px;
+  border: 2px solid var(--accent); background: var(--surface);
+  color: var(--text); font-size: 22px; font-weight: 700;
+  -webkit-appearance: none; appearance: none;
+  text-align: center; cursor: pointer; display: block;
+}
+.time-input:focus { outline: none; }
+.notes-input {
+  width: 100%; padding: 12px 14px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 15px; resize: none; height: 84px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.5; display: block;
+}
+.notes-input:focus { outline: none; border-color: var(--accent); }
+.notes-input::placeholder { color: var(--subtext); }
+
+/* ── Occurrences mode selector ── */
+.occ-controls { display: flex; gap: 8px; margin-bottom: 14px; flex-shrink: 0; }
+.occ-btn {
+  flex: 1; padding: 13px 8px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--surface);
+  color: var(--subtext); font-size: 13px; font-weight: 700;
+  cursor: pointer; text-align: center; line-height: 1.3;
+  transition: all .15s;
+}
+.occ-btn .occ-icon { font-size: 18px; display: block; margin-bottom: 3px; }
+.occ-btn:active { transform: scale(.96); }
+.occ-none-active { border-color: var(--same); color: var(--same); background: #3a3010; }
+.occ-add-active  { border-color: var(--better); color: var(--better); background: #1a3a2a; }
+.occ-btn.occ-disabled { opacity: 0.3; pointer-events: none; }
+
+/* ── Occurrence entry cards ── */
+.occ-entry-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px; margin-bottom: 10px; flex-shrink: 0;
+}
+.occ-entry-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.occ-entry-label { font-size: 12px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.6px; }
+.occ-remove-btn {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: #2a1a1a; border: 1px solid #4a2a2a;
+  color: var(--worse); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.occ-add-more {
+  width: 100%; padding: 12px; border-radius: 11px; margin-top: 2px;
+  border: 2px dashed var(--border); background: transparent;
+  color: var(--subtext); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.occ-add-more:active { border-color: var(--better); color: var(--better); }
+
+/* ── Face + occurrence history badges ── */
+.b-terrible { background: #3a1a1a; color: #f06060; }
+.b-poor     { background: #3a1a1a; color: #d05555; }
+.b-neutral  { background: #3a3010; color: #f0c040; }
+.b-good     { background: #1a3a2a; color: #27a06e; }
+.b-great    { background: #1a3a2a; color: #3ecf8e; }
+.tl-occ-notes { font-size: 12px; color: var(--subtext); font-style: italic; margin-top: 0; }
+
+/* ── Edit mode banner (Log screen) ── */
+.edit-banner {
+  display: none; align-items: center; justify-content: space-between;
+  background: var(--accent-bg); border: 1px solid var(--accent);
+  border-radius: 12px; padding: 12px 14px; margin: 16px 20px 0;
+}
+.edit-banner-text { font-size: 13px; color: var(--accent); font-weight: 600; }
+.edit-cancel-btn {
+  font-size: 12px; font-weight: 700; color: var(--subtext);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px; cursor: pointer; flex-shrink: 0;
+}
+
+/* ── Two-button edit footer ── */
+.cf-btn.cf-delete { background: #2a1a1a; color: var(--worse); border: 1px solid #4a2a2a; }
+.cf-btn.cf-undo    { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+/* ── Pending delete notice ── */
+.delete-notice {
+  background: #2a1a1a; border: 1px solid #4a2a2a; border-radius: 14px;
+  padding: 24px 18px; text-align: center; margin-bottom: 14px;
+}
+.delete-notice .dn-icon { font-size: 30px; margin-bottom: 10px; }
+.delete-notice .dn-title { font-size: 16px; font-weight: 700; color: var(--worse); margin-bottom: 6px; }
+.delete-notice .dn-sub { font-size: 13px; color: var(--subtext); line-height: 1.5; }
+
+/* ── Clickable history entry (List view) ── */
+.hist-entry.tappable { cursor: pointer; transition: opacity .15s; }
+.hist-entry.tappable:active { opacity: 0.7; }
+
+/* ── Clickable graph points ── */
+.graph-point { cursor: pointer; }
+.graph-point-touch { fill: transparent; }
+
+/* ── History symptom filter ── */
+.hist-filter-wrap { margin-bottom: 14px; }
+.hist-select {
+  width: 100%; padding: 11px 38px 11px 14px; border-radius: 11px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 15px; font-weight: 500;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238890b0' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; cursor: pointer;
+}
+.hist-select:focus { outline: none; border-color: var(--accent); }
+/* ── Filtered entry cards ── */
+.hist-sym-header { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 3px; }
+.graph-header-row { display: flex; justify-content: space-between; align-items: stretch; }
+.graph-legend { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; justify-content: flex-end; padding-bottom: 14px; }
+.graph-legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; color: var(--subtext);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.hist-sym-cat { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--subtext); margin-bottom: 14px; }
+.hist-entry { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+#graph-point-preview { margin-top: 12px; }
+#graph-point-preview .hist-entry { cursor: pointer; transition: opacity .15s; }
+#graph-point-preview .hist-entry:active { opacity: 0.7; }
+.hist-entry-time { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+.hist-entry-period { color: var(--subtext); font-weight: 500; }
+.hist-entry-badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.hist-badge-grid { display: grid; grid-template-columns: 100px 100px; column-gap: 8px; align-items: center; margin-top: 2px; }
+.hist-entry-notes { font-size: 13px; color: var(--subtext); font-style: italic; margin-top: 5px; }
+
+/* ── History view toggle (List / Display trend) ── */
+.hist-view-toggle { display: none; gap: 8px; margin-bottom: 14px; }
+.htoggle-btn {
+  flex: 1; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--subtext); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.htoggle-btn.htoggle-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+/* ── History time filter chips ── */
+.hist-time-chips { display: flex; gap: 6px; margin-bottom: 12px; }
+.time-chip {
+  flex: 1; padding: 7px 4px; border-radius: 8px; text-align: center;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--subtext); font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.time-chip.time-chip-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+/* ── Trend graph ── */
+.trend-graph-wrap {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 10px; margin-top: 10px; overflow: hidden;
+}
+.chart-flex { display: flex; }
+.chart-yaxis-fixed { flex-shrink: 0; background: var(--card); }
+.chart-scroll {
+  flex: 1; overflow-x: auto; overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Export screen ── */
+#export-screen { overflow-y: auto; padding: 20px; }
+.exp-header { /* font/size now from .screen-header */ }
+.exp-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 18px; margin-bottom: 14px;
+}
+.exp-card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.exp-card-body  { font-size: 14px; color: var(--subtext); line-height: 1.6; margin-bottom: 14px; }
+.exp-btn {
+  width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700;
+  border: none; cursor: pointer; transition: opacity .15s;
+}
+.exp-btn:active { opacity: .75; }
+.exp-btn-primary { background: var(--accent); color: #fff; }
+.exp-btn-ghost   { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.exp-btn-danger  { background: #2a1a1a; color: var(--worse); border: 1px solid #4a2a2a; }
+
+/* ── Screen header row: title left, profile name right ── */
+.screen-header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 18px;
+}
+.profile-label {
+  font-size: 12px; font-weight: 600; color: var(--subtext);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%;
+}
+.history-title-group { display: inline-flex; align-items: center; gap: 8px; }
+.print-icon-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  flex-shrink: 0; color: var(--subtext);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.print-icon-btn:active { opacity: 0.5; }
+.print-icon-btn svg { width: 17px; height: 17px; }
+
+/* ── Profile management (Data tab) ── */
+.profile-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.profile-row:last-of-type { border-bottom: none; }
+.profile-row-name {
+  flex: 1; text-align: left; background: none; border: none;
+  color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 0;
+}
+.profile-row-active .profile-row-name { color: var(--accent); }
+.profile-row-active .profile-row-name::before { content: "● "; font-size: 10px; }
+.profile-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.profile-action-btn {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--subtext); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.profile-del-btn.armed { background: #3a1a1a; border-color: var(--worse); color: var(--worse); width: auto; padding: 0 10px; font-size: 11px; font-weight: 700; }
+
+.profile-name-input {
+  flex: 1; padding: 9px 12px; border-radius: 9px;
+  border: 1px solid var(--accent); background: var(--surface);
+  color: var(--text); font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.profile-mini-btn {
+  font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--subtext);
+  cursor: pointer; flex-shrink: 0;
+}
+.profile-mini-save { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+.profile-copy-form {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 11px;
+  padding: 12px; margin: 6px 0 10px;
+}
+.copy-scope-row { display: flex; gap: 8px; margin: 10px 0; }
+.cs-btn {
+  flex: 1; padding: 10px 6px; border-radius: 9px; text-align: center;
+  border: 1px solid var(--border); background: var(--card); color: var(--subtext);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.cs-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.copy-form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+.profile-add-btn {
+  width: 100%; padding: 11px; border-radius: 10px; margin-top: 4px;
+  border: 2px dashed var(--border); background: transparent;
+  color: var(--subtext); font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.profile-add-btn:active { border-color: var(--accent); color: var(--accent); }
+
+/* ── Post-save summary ── */
+.summary-header { margin-bottom: 16px; }
+.summary-saved { font-size: 18px; font-weight: 800; color: var(--better); letter-spacing: -0.3px; }
+.summary-when  { font-size: 13px; color: var(--subtext); margin-top: 2px; }
+.summary-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-sym   { flex: 1; font-weight: 600; color: var(--text); padding-top: 2px; }
+.summary-now   { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.summary-prior { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; min-width: 90px; }
+.summary-prior-badges { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+.summary-prior-when { font-size: 11px; color: var(--subtext); text-align: right; }
+#toast {
+  position: fixed; bottom: calc(var(--nav-h) + 14px); left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #2a2d3e; border: 1px solid var(--border);
+  border-radius: 11px; padding: 10px 20px; font-size: 14px;
+  opacity: 0; transition: all .22s; pointer-events: none; z-index: 999;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ══ Print report (built fresh for print, separate from on-screen dark theme) ══ */
+.print-only { display: none; }
+
+#print-report {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  color: #1a1a1a; background: #fff;
+}
+#print-report h1 { font-size: 19px; font-weight: 800; margin-bottom: 3px; }
+#print-report .pr-meta { font-size: 12px; color: #555; margin-bottom: 4px; }
+#print-report .pr-scope { font-size: 13px; color: #1a1a1a; font-weight: 600; margin-bottom: 18px; }
+#print-report .pr-cat-title {
+  font-size: 14px; font-weight: 800; margin: 18px 0 8px;
+  border-bottom: 1.5px solid #999; padding-bottom: 4px;
+}
+#print-report .pr-cat-title:first-of-type { margin-top: 0; }
+#print-report .pr-date { font-size: 12px; font-weight: 700; color: #333; margin: 12px 0 4px; }
+#print-report .pr-period-title {
+  font-size: 11px; font-weight: 700; color: #777; text-transform: uppercase;
+  letter-spacing: 0.5px; margin: 8px 0 4px 4px;
+}
+#print-report .pr-row-grid {
+  display: grid; grid-template-columns: minmax(0,1fr) 120px 120px;
+  align-items: center; column-gap: 10px; font-size: 12.5px;
+  padding: 4px 0; border-bottom: 1px solid #eee;
+}
+#print-report .pr-sym-badge-grid {
+  display: grid; grid-template-columns: 120px 120px;
+  column-gap: 10px; margin-top: 3px;
+}
+#print-report .pr-entry-name { font-weight: 600; }
+#print-report .pr-entry {
+  font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid #e5e5e5;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
+}
+#print-report .pr-entry-time { color: #555; font-size: 11.5px; }
+#print-report .pr-badge {
+  display: inline-block; font-size: 10.5px; font-weight: 700;
+  padding: 1px 7px; border-radius: 10px; border: 1.3px solid currentColor;
+  white-space: nowrap;
+}
+#print-report .pr-notes { width: 100%; font-size: 11.5px; font-style: italic; color: #555; margin-top: 1px; }
+#print-report .pr-empty { font-size: 13px; color: #777; padding: 20px 0; }
+#print-report .pr-graph-wrap { margin-top: 8px; }
+#print-report .pr-footer { margin-top: 24px; font-size: 10px; color: #999; }
+
+@media print {
+  body * { visibility: hidden; }
+  #print-report, #print-report * { visibility: visible; }
+  #print-report {
+    display: block !important;
+    position: absolute; left: 0; top: 0; width: 100%;
+    padding: 0.4in;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ LOG ══ -->
+  <div id="log-screen" class="screen active">
+    <div class="edit-banner" id="edit-banner">
+      <span class="edit-banner-text" id="edit-banner-text">Editing entry</span>
+      <button class="edit-cancel-btn" id="edit-cancel-btn">Cancel</button>
+    </div>
+    <div class="log-top" id="log-top">
+      <div class="screen-header log-header">
+        <span>Log</span>
+        <span class="profile-label" id="profile-label-log"></span>
+      </div>
+      <div class="log-date-row">
+        <button class="date-nav" onclick="shiftDate(-1)">‹</button>
+        <div class="date-label" id="date-label">Today</div>
+        <button class="today-btn" onclick="goToday()">Today</button>
+        <button class="date-nav" onclick="shiftDate(1)">›</button>
+      </div>
+      <div class="period-chips">
+        <button class="pchip active" data-p="day"       onclick="setPeriod('day')">All day</button>
+        <button class="pchip"       data-p="morning"    onclick="setPeriod('morning')">Morning</button>
+        <button class="pchip"       data-p="afternoon"  onclick="setPeriod('afternoon')">Afternoon</button>
+        <button class="pchip"       data-p="evening"    onclick="setPeriod('evening')">Evening</button>
+      </div>
+    </div>
+    <div class="carousel-area" id="carousel-area">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- ══ HISTORY ══ -->
+  <div id="history-screen" class="screen">
+    <div class="history-header screen-header">
+      <span class="history-title-group">History <button class="print-icon-btn" id="print-btn" title="Print" aria-label="Print">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V3"/>
+          <path d="M7.5 7.5L12 3l4.5 4.5"/>
+          <path d="M4.5 12.5v6a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-6"/>
+        </svg>
+      </button></span>
+      <span class="profile-label" id="profile-label-history"></span>
+    </div>
+    <div class="hist-time-chips">
+      <button class="time-chip time-chip-active" data-period="all">All</button>
+      <button class="time-chip" data-period="7d">7 days</button>
+      <button class="time-chip" data-period="30d">30 days</button>
+      <button class="time-chip" data-period="90d">90 days</button>
+    </div>
+    <div class="hist-filter-wrap">
+      <select class="hist-select" id="hist-cat-select">
+        <option value="">All entries</option>
+        <option value="General">General</option>
+        <option value="Symptoms">Symptoms</option>
+        <option value="Occurrences">Occurrences</option>
+      </select>
+      <select class="hist-select" id="hist-sym-select" style="display:none;margin-top:8px"></select>
+    </div>
+    <div class="hist-view-toggle" id="hist-view-toggle">
+      <button class="htoggle-btn htoggle-active" id="htoggle-text">List</button>
+      <button class="htoggle-btn" id="htoggle-graph">Chart</button>
+      <button class="htoggle-btn" id="htoggle-trend">Chart + Trend</button>
+    </div>
+    <div id="history-body"></div>
+  </div>
+
+  <!-- ══ SYMPTOMS ══ -->
+  <div id="symptoms-screen" class="screen">
+    <div class="sym-header screen-header">
+      <span>Setup</span>
+      <span class="profile-label" id="profile-label-symptoms"></span>
+    </div>
+    <div class="exp-card">
+      <div class="exp-card-title">Profiles</div>
+      <div class="exp-card-body">Switch between independent sets of symptoms and history — e.g. separate profiles for yourself and someone else, or for testing.</div>
+      <div id="profiles-list"></div>
+      <div id="new-profile-form-area"></div>
+    </div>
+    <div class="exp-card" id="sym-list-card">
+      <div class="exp-card-title">Symptoms</div>
+      <div class="exp-card-body">Define what you want to track across your check-ins. Select a Category and then enter the item. General is for overall wellbeing, Symptoms for specific conditions, and Occurrences for discrete events.</div>
+      <div class="cat-selector">
+        <button class="cat-btn active" data-cat="General"     onclick="selectCategory('General')">General</button>
+        <button class="cat-btn"        data-cat="Symptoms"    onclick="selectCategory('Symptoms')">Symptoms</button>
+        <button class="cat-btn"        data-cat="Occurrences" onclick="selectCategory('Occurrences')">Occurrences</button>
+      </div>
+      <div class="sym-input-row">
+        <input class="sym-input" id="new-sym" type="text"
+          placeholder="Overall, Sleep, …"
+          onkeydown="if(event.key==='Enter')addSymptom()" oninput="syncAddBtn()">
+        <button class="sym-add-btn" onclick="addSymptom()">+</button>
+      </div>
+      <div id="sym-list" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- ══ EXPORT ══ -->
+  <div id="export-screen" class="screen">
+    <div class="exp-header screen-header">
+      <span>Data</span>
+      <span class="profile-label" id="profile-label-data"></span>
+    </div>
+    <div class="exp-card">
+      <div class="exp-card-title">Print All Data</div>
+      <div class="exp-card-body">Print or save a PDF of your full history. Choose a time range and format.</div>
+      <div class="hist-time-chips print-all-chips" id="print-all-chips" style="margin-bottom:14px">
+        <button class="time-chip time-chip-active" data-range="all">All</button>
+        <button class="time-chip" data-range="7d">7 days</button>
+        <button class="time-chip" data-range="30d">30 days</button>
+        <button class="time-chip" data-range="90d">90 days</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
+        <button class="exp-btn exp-btn-primary" style="flex:1;padding:14px 4px" onclick="triggerPrintAll('text')">List</button>
+        <button class="exp-btn exp-btn-primary" style="flex:1;padding:14px 4px" onclick="triggerPrintAll('graphs')">Chart</button>
+        <button class="exp-btn exp-btn-primary" style="flex:1;padding:14px 4px" onclick="triggerPrintAll('graphs-trend')">Chart+Trend</button>
+      </div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-card-title">Export to CSV</div>
+      <div class="exp-card-body">Download your full history as a spreadsheet. Open in Numbers or Excel, or share with your care team.</div>
+      <button class="exp-btn exp-btn-primary" onclick="exportCSV()">⬇ Download CSV</button>
+    </div>
+    <div class="exp-card">
+      <div class="exp-card-title">Import CSV</div>
+      <div class="exp-card-body">Restore a previously exported file to bring your history back.</div>
+      <input type="file" id="import-file" accept=".csv" style="display:none" onchange="importCSV(event)">
+      <button class="exp-btn exp-btn-primary" onclick="document.getElementById('import-file').click()">⬆ Import CSV</button>
+      <div id="import-warning" style="display:none;margin-top:14px">
+        <div class="exp-card-body" id="import-warning-msg" style="margin-bottom:10px;color:var(--text)"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="exp-btn exp-btn-primary" style="flex:1" onclick="confirmImport('merge')">Merge</button>
+          <button class="exp-btn exp-btn-danger"  style="flex:1" onclick="confirmImport('replace')">Replace</button>
+          <button class="exp-btn exp-btn-ghost"   style="flex:1" onclick="cancelImport()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-card-title">Clear everything</div>
+      <div class="exp-card-body">Permanently removes all entries and the symptom list for the current profile only. Export first if you need a backup.</div>
+      <button class="exp-btn exp-btn-danger" id="clear-all-btn" onclick="tapClearAll()">Clear all data</button>
+    </div>
+  </div>
+
+  <!-- ══ NAV ══ -->
+  <nav>
+    <button class="nav-item active" data-screen="log" onclick="switchScreen('log')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Log
+    </button>
+    <button class="nav-item" data-screen="history" onclick="switchScreen('history')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>History
+    </button>
+    <button class="nav-item" data-screen="symptoms" onclick="switchScreen('symptoms')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Setup
+    </button>
+    <button class="nav-item" data-screen="export" onclick="switchScreen('export')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>Data
+    </button>
+  </nav>
+</div>
+<div id="print-report" class="print-only"></div>
+<div id="toast"></div>
+
+<script>
+// ══ State ══
+let state = { symptoms: [], entries: [] };
+let currentDate = todayStr();
+let currentPeriod = 'day';
+let currentStep = 0;
+let draft = {};
+
+const CATEGORIES = ['General', 'Symptoms', 'Occurrences'];
+let selectedCategory = 'General';
+let renamingSymptomId    = null;
+let armedSymptomDeleteId = null;
+let armedSymptomDeleteTimer = null;
+let histCatFilter = '';   // '' | 'General' | 'Symptoms' | 'Occurrences'
+let histSymFilter = '';   // '' | symId
+let histViewMode  = 'text'; // 'text' | 'graph' | 'trend'
+let histTimeFilter = 'all'; // 'all' | '7d' | '30d' | '90d'
+let selectedGraphPointId = null;
+let printAllTimeFilter = 'all';
+let pendingImportRows = null; // holds parsed CSV rows while user chooses Replace vs Merge // currently tapped graph point
+
+// Edit/delete state
+let editingEntryId = null;
+let editingSymId   = null;
+let pendingDelete  = false;
+
+// Profile state
+let profilesRegistry = null; // { profiles: [{id, name}], activeId }
+let renamingProfileId = null;
+let copyingProfileId  = null;
+let copyScope = 'full'; // 'full' | 'symptoms'
+let showNewProfileForm = false;
+let armedProfileDeleteId = null;
+let armProfileDeleteTimer = null;
+
+function getTimeFilteredEntries(entries) {
+  if (histTimeFilter === 'all') return entries;
+  var days = histTimeFilter === '7d' ? 7 : histTimeFilter === '30d' ? 30 : 90;
+  var cutoff = Date.now() - days * 86400000;
+  return entries.filter(function(e) {
+    var ts = e.savedAt || new Date(e.date + 'T12:00:00').getTime();
+    return ts >= cutoff;
+  });
+}
+
+const FACE_EMOJI = {terrible:'😖', poor:'😕', neutral:'😐', good:'🙂', great:'😀'};
+const FACE_LABEL = {terrible:'Terrible', poor:'Poor', neutral:'Neutral', good:'Good', great:'Great'};
+
+const TRASH_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+function fmtDateTime(savedAt, dateStr) {
+  if (savedAt) {
+    const d = new Date(savedAt);
+    return d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})
+      + ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  }
+  if (dateStr) {
+    return new Date(dateStr + 'T12:00:00')
+      .toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+  }
+  return 'Unknown';
+}
+
+// Fixed clock-time anchors used for graph x-axis positioning only.
+// Keeps period-based entries evenly spaced regardless of when they were actually logged.
+const NOTIONAL_HOURS = { morning: 9, afternoon: 14, evening: 20, day: 12 };
+
+// Returns the timestamp to use for GRAPH plotting.
+// Occurrences always use their real entered/saved time.
+// General & Symptoms entries use a notional time derived from date + period.
+function getPlotTs(e) {
+  if (e.category === 'Occurrences') {
+    return e.savedAt || new Date(e.date + 'T12:00:00').getTime();
+  }
+  const hour = NOTIONAL_HOURS[e.period] != null ? NOTIONAL_HOURS[e.period] : 12;
+  return new Date(e.date + 'T' + String(hour).padStart(2,'0') + ':00:00').getTime();
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ══ Persist (profile-aware) ══
+function dataKey(id) { return 'symptomlog_data_v1__' + id; }
+
+function loadRegistry() {
+  try { const s = localStorage.getItem('symptomlog_profiles_v1'); if (s) return JSON.parse(s); } catch(e) {}
+  return null;
+}
+function saveRegistry() { localStorage.setItem('symptomlog_profiles_v1', JSON.stringify(profilesRegistry)); }
+
+function initProfiles() {
+  profilesRegistry = loadRegistry();
+  if (!profilesRegistry) {
+    // First run on this version — migrate any pre-existing single dataset into "My Data"
+    let legacy = null;
+    try { const s = localStorage.getItem('symptomlog_v1'); if (s) legacy = JSON.parse(s); } catch(e) {}
+    const id = 'p_' + Date.now();
+    profilesRegistry = { profiles: [{ id: id, name: 'My Data' }], activeId: id };
+    localStorage.setItem(dataKey(id), JSON.stringify(legacy || { symptoms: [], entries: [] }));
+    saveRegistry();
+  }
+}
+
+function loadActiveProfileData() {
+  const id = profilesRegistry.activeId;
+  try {
+    const s = localStorage.getItem(dataKey(id));
+    state = s ? JSON.parse(s) : { symptoms: [], entries: [] };
+  } catch(e) { state = { symptoms: [], entries: [] }; }
+}
+
+function persist() {
+  if (!profilesRegistry) return;
+  localStorage.setItem(dataKey(profilesRegistry.activeId), JSON.stringify(state));
+}
+
+function getActiveProfile() {
+  return profilesRegistry.profiles.find(p => p.id === profilesRegistry.activeId);
+}
+
+function renderProfileBar() {
+  const name = getActiveProfile() ? getActiveProfile().name : '';
+  ['profile-label-log', 'profile-label-history', 'profile-label-symptoms', 'profile-label-data'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = name;
+  });
+}
+
+function refreshAfterProfileChange() {
+  draft = {}; currentStep = 0;
+  discardEditMode();
+  histCatFilter = ''; histSymFilter = ''; histViewMode = 'text'; histTimeFilter = 'all';
+  updateDateLabel();
+  renderCarousel();
+  renderSymptoms();
+  renderProfileBar();
+  renderProfilesList();
+  if (document.getElementById('history-screen').classList.contains('active')) renderHistory();
+}
+
+function switchProfile(id) {
+  if (!id || id === profilesRegistry.activeId) return;
+  persist(); // save current profile's in-memory state before switching away
+  profilesRegistry.activeId = id;
+  saveRegistry();
+  loadActiveProfileData();
+  refreshAfterProfileChange();
+
+}
+
+function createProfile(name) {
+  name = (name || '').trim();
+  if (!name) { toast('Enter a name'); return; }
+  const id = 'p_' + Date.now() + Math.floor(Math.random() * 1000);
+  profilesRegistry.profiles.push({ id, name });
+  localStorage.setItem(dataKey(id), JSON.stringify({ symptoms: [], entries: [] }));
+  saveRegistry();
+  showNewProfileForm = false;
+  renderProfilesList();
+}
+
+function copyProfile(sourceId, includeHistory, newName) {
+  newName = (newName || '').trim();
+  if (!newName) { toast('Enter a name'); return; }
+  if (sourceId === profilesRegistry.activeId) persist(); // ensure latest in-memory state is saved
+  let srcData;
+  try { srcData = JSON.parse(localStorage.getItem(dataKey(sourceId))) || { symptoms: [], entries: [] }; }
+  catch(e) { srcData = { symptoms: [], entries: [] }; }
+
+  const newId = 'p_' + Date.now() + Math.floor(Math.random() * 1000);
+  const newData = includeHistory
+    ? JSON.parse(JSON.stringify(srcData))
+    : { symptoms: JSON.parse(JSON.stringify(srcData.symptoms || [])), entries: [] };
+
+  localStorage.setItem(dataKey(newId), JSON.stringify(newData));
+  profilesRegistry.profiles.push({ id: newId, name: newName });
+  saveRegistry();
+  copyingProfileId = null;
+  renderProfilesList();
+}
+
+function renameProfile(id, newName) {
+  newName = (newName || '').trim();
+  if (!newName) { toast('Enter a name'); return; }
+  const p = profilesRegistry.profiles.find(p => p.id === id);
+  if (!p) return;
+  p.name = newName;
+  saveRegistry();
+  renamingProfileId = null;
+  renderProfilesList();
+  renderProfileBar();
+
+}
+
+function tapDeleteProfile(id) {
+  if (profilesRegistry.profiles.length <= 1) { toast("Can't delete your only profile"); return; }
+  if (armedProfileDeleteId === id) {
+    const wasActive = id === profilesRegistry.activeId;
+    profilesRegistry.profiles = profilesRegistry.profiles.filter(p => p.id !== id);
+    localStorage.removeItem(dataKey(id));
+    if (wasActive) {
+      profilesRegistry.activeId = profilesRegistry.profiles[0].id;
+      saveRegistry();
+      loadActiveProfileData();
+      refreshAfterProfileChange();
+    } else {
+      saveRegistry();
+      renderProfilesList();
+    }
+    armedProfileDeleteId = null;
+    clearTimeout(armProfileDeleteTimer);
+
+  } else {
+    armedProfileDeleteId = id;
+    clearTimeout(armProfileDeleteTimer);
+    armProfileDeleteTimer = setTimeout(() => {
+      if (armedProfileDeleteId === id) { armedProfileDeleteId = null; renderProfilesList(); }
+    }, 3000);
+    renderProfilesList();
+  }
+}
+
+function renderProfilesList() {
+  const list = document.getElementById('profiles-list');
+  const formArea = document.getElementById('new-profile-form-area');
+  if (!list || !formArea) return;
+
+  const rows = profilesRegistry.profiles.map(p => {
+    const isActive = p.id === profilesRegistry.activeId;
+    const activeClass = isActive ? ' sym-item-active' : '';
+
+    if (renamingProfileId === p.id) {
+      return `<div class="sym-item-row${activeClass}">
+        <input class="profile-name-input" id="rename-input-${p.id}" value="${escapeHtml(p.name)}" style="flex:1;margin-right:6px">
+        <button class="profile-mini-btn profile-mini-save" data-save-rename="${p.id}">Save</button>
+        <button class="profile-mini-btn" data-cancel-rename="${p.id}">Cancel</button>
+      </div>`;
+    }
+
+    let row = `<div class="sym-item-row${activeClass}">
+      <button class="profile-name-tap" data-switch-id="${p.id}">${escapeHtml(p.name)}</button>
+      <button class="profile-action-btn" data-rename-id="${p.id}">✎</button>
+      <button class="profile-action-btn" data-copy-id="${p.id}">⧉</button>
+      <button class="profile-action-btn profile-del-btn ${armedProfileDeleteId===p.id?'armed':''}" data-del-id="${p.id}">${armedProfileDeleteId===p.id?'Confirm?':TRASH_ICON}</button>
+    </div>`;
+
+    if (copyingProfileId === p.id) {
+      row += `<div class="profile-copy-form">
+        <div class="choice-label" style="margin-bottom:8px">Copy "${escapeHtml(p.name)}" as…</div>
+        <input class="profile-name-input" id="copy-name-input" value="Copy of ${escapeHtml(p.name)}" style="width:100%;margin-bottom:4px">
+        <div class="copy-scope-row">
+          <button class="cs-btn ${copyScope==='symptoms'?'active':''}" data-scope="symptoms">Symptoms only</button>
+          <button class="cs-btn ${copyScope==='full'?'active':''}" data-scope="full">Symptoms + history</button>
+        </div>
+        <div class="copy-form-actions">
+          <button class="profile-mini-btn" data-cancel-copy="${p.id}">Cancel</button>
+          <button class="profile-mini-btn profile-mini-save" data-confirm-copy="${p.id}">Create copy</button>
+        </div>
+      </div>`;
+    }
+    return row;
+  }).join('');
+
+  list.innerHTML = `<div class="sym-cat-header">Profiles</div>` + rows;
+
+  formArea.innerHTML = showNewProfileForm
+    ? `<div class="profile-copy-form">
+        <input class="profile-name-input" id="new-profile-input" placeholder="Profile name" style="width:100%;margin-bottom:8px">
+        <div class="copy-form-actions">
+          <button class="profile-mini-btn" id="cancel-new-profile">Cancel</button>
+          <button class="profile-mini-btn profile-mini-save" id="confirm-new-profile">Create</button>
+        </div>
+      </div>`
+    : `<button class="profile-add-btn" id="add-profile-btn">+ New profile</button>`;
+}
+
+function initProfilesUI() {
+  const card = document.getElementById('profiles-list').closest('.exp-card');
+  if (!card) return;
+  card.addEventListener('click', function(ev) {
+    const switchBtn = ev.target.closest('[data-switch-id]');
+    if (switchBtn) { switchProfile(switchBtn.dataset.switchId); return; }
+
+    const renameBtn = ev.target.closest('[data-rename-id]');
+    if (renameBtn) { renamingProfileId = renameBtn.dataset.renameId; copyingProfileId = null; renderProfilesList(); return; }
+    const cancelRename = ev.target.closest('[data-cancel-rename]');
+    if (cancelRename) { renamingProfileId = null; renderProfilesList(); return; }
+    const saveRename = ev.target.closest('[data-save-rename]');
+    if (saveRename) {
+      const id = saveRename.dataset.saveRename;
+      const input = document.getElementById('rename-input-' + id);
+      renameProfile(id, input ? input.value : '');
+      return;
+    }
+
+    const copyBtn = ev.target.closest('[data-copy-id]');
+    if (copyBtn) { copyingProfileId = copyBtn.dataset.copyId; renamingProfileId = null; copyScope = 'full'; renderProfilesList(); return; }
+    const cancelCopy = ev.target.closest('[data-cancel-copy]');
+    if (cancelCopy) { copyingProfileId = null; renderProfilesList(); return; }
+    const scopeBtn = ev.target.closest('[data-scope]');
+    if (scopeBtn) { copyScope = scopeBtn.dataset.scope; renderProfilesList(); return; }
+    const confirmCopy = ev.target.closest('[data-confirm-copy]');
+    if (confirmCopy) {
+      const srcId = confirmCopy.dataset.confirmCopy;
+      const nameInput = document.getElementById('copy-name-input');
+      copyProfile(srcId, copyScope === 'full', nameInput ? nameInput.value : '');
+      return;
+    }
+
+    const delBtn = ev.target.closest('[data-del-id]');
+    if (delBtn) { tapDeleteProfile(delBtn.dataset.delId); return; }
+
+    if (ev.target.id === 'add-profile-btn') { showNewProfileForm = true; renderProfilesList(); return; }
+    if (ev.target.id === 'cancel-new-profile') { showNewProfileForm = false; renderProfilesList(); return; }
+    if (ev.target.id === 'confirm-new-profile') {
+      const input = document.getElementById('new-profile-input');
+      createProfile(input ? input.value : '');
+      return;
+    }
+  });
+}
+
+// ══ Screens ══
+function switchScreen(name) {
+  if (editingEntryId && name !== 'log') discardEditMode();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(name + '-screen').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+  if (name === 'history') { histTimeFilter = 'all'; renderHistory(); }
+  if (name === 'symptoms') renderSymptoms();
+}
+
+// Returns to History screen WITHOUT resetting the time/category/symptom/view filters —
+// used when coming back from saving/canceling/deleting an entry edit.
+function showHistoryScreen() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('history-screen').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === 'history'));
+  renderHistory();
+}
+
+function discardEditMode() {
+  editingEntryId = null; editingSymId = null; pendingDelete = false; draft = {};
+  const banner = document.getElementById('edit-banner');
+  const logTop = document.getElementById('log-top');
+  if (banner) banner.style.display = 'none';
+  if (logTop) logTop.style.display = 'block';
+}
+
+// ══ Date / Period ══
+function updateDateLabel() {
+  const isToday = currentDate === todayStr();
+  const d = new Date(currentDate + 'T12:00:00');
+  document.getElementById('date-label').textContent = isToday
+    ? 'Today'
+    : d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+}
+function shiftDate(n) {
+  const d = new Date(currentDate + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  currentDate = d.toISOString().slice(0,10);
+  draft = {};
+  currentStep = 0;
+  updateDateLabel();
+  renderCarousel();
+}
+function goToday() {
+  currentDate = todayStr();
+  draft = {};
+  currentStep = 0;
+  updateDateLabel();
+  renderCarousel();
+}
+function setPeriod(p) {
+  currentPeriod = p;
+  document.querySelectorAll('.pchip').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+  draft = {};
+  currentStep = 0;
+  renderCarousel();
+}
+
+// ══ Carousel ══
+function getPrev(symId) {
+  // look at previous period entries for context
+  const all = state.entries.filter(e => e.symptomId === symId)
+    .sort((a,b) => (b.date+b.period).localeCompare(a.date+a.period));
+  // exclude current date+period
+  const prev = all.find(e => !(e.date === currentDate && e.period === currentPeriod));
+  return prev || null;
+}
+
+function renderCarousel() {
+  const area = document.getElementById('carousel-area');
+  // Sort by category order (General → Symptoms → Occurrences), stable within each category
+  let syms = [...state.symptoms].sort((a, b) => {
+    const ai = CATEGORIES.indexOf(a.category || 'General');
+    const bi = CATEGORIES.indexOf(b.category || 'General');
+    return ai - bi;
+  });
+  if (editingEntryId) syms = syms.filter(s => s.id === editingSymId);
+
+  if (!syms.length) {
+    area.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🩺</div>
+        <h3>No symptoms yet</h3>
+        <p>Add the symptoms you want to track, then come back here to log how you're feeling.</p>
+        <button class="go-btn" onclick="switchScreen('symptoms')">Add symptoms</button>
+      </div>`;
+    return;
+  }
+
+  if (currentStep >= syms.length) currentStep = syms.length - 1;
+  const sym = syms[currentStep];
+  const d = draft[sym.id] || {};
+  const prev = getPrev(sym.id);
+  const isLast = currentStep === syms.length - 1;
+
+  const prevBadges = [];
+  if (prev) {
+    if (prev.relative) {
+      prevBadges.push(`<span class="badge b-${prev.relative}">${prev.relative.replace('-',' ')}</span>`);
+    }
+    if (prev.absolute) {
+      const label = FACE_LABEL[prev.absolute] || prev.absolute;
+      prevBadges.push(`<span class="badge b-${prev.absolute}">${label}</span>`);
+    }
+  }
+  const periodShort = {day:'All day', morning:'Morn', afternoon:'Aft', evening:'Eve'};
+  const prevWhen = prev ? (() => {
+    const d = new Date(prev.date + 'T12:00:00');
+    const dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    const perStr  = periodShort[prev.period] || prev.period;
+    return `<span style="color:var(--subtext);font-size:12px">${dateStr} · ${perStr}</span> `;
+  })() : '';
+  const prevNote = prevBadges.length
+    ? `Previously ${prevWhen}${prevBadges.join(' ')}`
+    : 'No previous reading';
+
+  // Dot row
+  const dots = syms.map((_, i) => {
+    if (i === currentStep) return `<div class="dot active"></div>`;
+    if (i < currentStep)   return `<div class="dot done"></div>`;
+    return `<div class="dot"></div>`;
+  }).join('');
+
+  const cat = sym.category || 'General';
+
+  let contentHtml;
+
+  if (cat === 'Occurrences') {
+    const occ      = draft[sym.id] || {};
+    const occMode  = occ.mode || null;
+    const noneNotes = occ.noneNotes || '';
+    const entries  = occ.entries  || [];
+
+    const noneActive = occMode === 'none';
+    const addActive  = occMode === 'entries';
+
+    // Mode selector buttons
+    const controls = `
+      <div class="occ-controls">
+        <button class="occ-btn ${noneActive ? 'occ-none-active' : ''} ${addActive ? 'occ-disabled' : ''}"
+          onclick="setOccMode('${sym.id}', ${noneActive ? 'null' : "'none'"})">
+          <span class="occ-icon">${noneActive ? '✓' : '—'}</span>
+          None this period
+        </button>
+        <button class="occ-btn ${addActive ? 'occ-add-active' : ''} ${noneActive ? 'occ-disabled' : ''}"
+          onclick="addOccEntry('${sym.id}')">
+          <span class="occ-icon">+</span>
+          Add occurrence
+        </button>
+      </div>`;
+
+    // "None" mode: just a note field
+    let bodyHtml = '';
+    if (noneActive) {
+      bodyHtml = `
+        <textarea class="notes-input" style="flex-shrink:0"
+          placeholder="Optional note…"
+          onchange="setOccNoneNote('${sym.id}', this.value)">${noneNotes}</textarea>`;
+    } else if (addActive) {
+      // One card per occurrence entry
+      const cards = entries.map((entry, i) => {
+        const tDisplay = entry.time
+          ? `<div class="time-display time-is-set" onclick="activateOccTime('${sym.id}',${i})">${fmtTime(entry.time)}</div>
+             <input type="time" id="occ-ti-${sym.id}-${i}" data-symid="${sym.id}" data-idx="${i}"
+               class="time-input" value="${entry.time}" style="display:none"
+               onchange="handleOccTimeSelect(this)">`
+          : `<div class="time-display" onclick="activateOccTime('${sym.id}',${i})">None</div>
+             <input type="time" id="occ-ti-${sym.id}-${i}" data-symid="${sym.id}" data-idx="${i}"
+               class="time-input" style="display:none"
+               onchange="handleOccTimeSelect(this)">`;
+        return `
+          <div class="occ-entry-card">
+            <div class="occ-entry-header">
+              <span class="occ-entry-label">Occurrence ${i + 1}</span>
+              <button class="occ-remove-btn" onclick="removeOccEntry('${sym.id}',${i})">${TRASH_ICON}</button>
+            </div>
+            <div class="choice-label" style="margin-bottom:6px">Time</div>
+            <div class="time-wrap" style="margin-bottom:10px">${tDisplay}</div>
+            <div class="choice-label" style="margin-bottom:6px">Notes</div>
+            <textarea class="notes-input" style="height:64px"
+              placeholder="Optional note…"
+              onchange="setOccEntryNote('${sym.id}',${i},this.value)">${entry.notes || ''}</textarea>
+          </div>`;
+      }).join('');
+      bodyHtml = cards + `<button class="occ-add-more" onclick="addOccEntry('${sym.id}')">+ Add another occurrence</button>`;
+    }
+
+    contentHtml = controls + bodyHtml;
+  } else {
+    // Trend buttons — shared by General and Symptoms
+    const betterSel = d.relative === 'much-better' ? 'sel-max' : d.relative === 'better' ? 'sel' : '';
+    const worseSel  = d.relative === 'much-worse'  ? 'sel-max' : d.relative === 'worse'  ? 'sel' : '';
+    const sameSel   = d.relative === 'same' ? 'sel' : '';
+    const trends = `
+      <button class="choice-btn worse ${worseSel}" onclick="setDraft('${sym.id}','relative','worse')">
+        <span class="choice-icon">${d.relative === 'much-worse' ? '↓↓' : '↓'}</span>
+        ${d.relative === 'much-worse' ? 'Much Worse' : 'Worse'}
+      </button>
+      <button class="choice-btn same ${sameSel}" onclick="setDraft('${sym.id}','relative','same')">
+        <span class="choice-icon">→</span>Same
+      </button>
+      <button class="choice-btn better ${betterSel}" onclick="setDraft('${sym.id}','relative','better')">
+        <span class="choice-icon">${d.relative === 'much-better' ? '↑↑' : '↑'}</span>
+        ${d.relative === 'much-better' ? 'Much Better' : 'Better'}
+      </button>`;
+    const trendSection = `
+      <div class="choice-section">
+        <div class="choice-label">Trend vs last reading</div>
+        <div class="choice-row">${trends}</div>
+      </div>`;
+
+    if (cat === 'General') {
+      const faceBtns = [
+        {k:'terrible', cls:'face-terrible', e:'😖'},
+        {k:'poor',     cls:'face-poor',     e:'😕'},
+        {k:'neutral',  cls:'face-neutral',  e:'😐'},
+        {k:'good',     cls:'face-good',     e:'🙂'},
+        {k:'great',    cls:'face-great',    e:'😀'}
+      ].map(({k,cls,e}) => `
+        <button class="choice-btn ${cls} ${d.absolute===k?'sel':''}"
+          onclick="setDraft('${sym.id}','absolute','${k}')">
+          <span class="face-emoji">${e}</span>
+        </button>`).join('');
+      contentHtml = trendSection + `
+        <div class="choice-section">
+          <div class="choice-label">How do you feel?</div>
+          <div class="choice-row">${faceBtns}</div>
+        </div>
+        <div class="choice-section">
+          <div class="choice-label">Notes</div>
+          <textarea class="notes-input" placeholder="Optional comment…"
+            onchange="setDraftField('${sym.id}','notes',this.value)">${d.notes || ''}</textarea>
+        </div>`;
+    } else {
+      const levels = [
+        {k:'severe',   cls:'lv-sev',  label:'Severe'},
+        {k:'moderate', cls:'lv-mod',  label:'Mod'},
+        {k:'mild',     cls:'lv-mild', label:'Mild'},
+        {k:'none',     cls:'lv-none', label:'None'}
+      ].map(({k,cls,label}) => `
+        <button class="choice-btn ${cls} ${d.absolute===k?'sel':''}"
+          onclick="setDraft('${sym.id}','absolute','${k}')">
+          ${label}
+        </button>`).join('');
+      contentHtml = trendSection + `
+        <div class="choice-section">
+          <div class="choice-label">Current level</div>
+          <div class="choice-row">${levels}</div>
+        </div>
+        <div class="choice-section">
+          <div class="choice-label">Notes</div>
+          <textarea class="notes-input" placeholder="Optional comment…"
+            onchange="setDraftField('${sym.id}','notes',this.value)">${d.notes || ''}</textarea>
+        </div>`;
+    }
+  }
+
+  const footerBtn = isLast
+    ? `<button class="cf-btn cf-save" onclick="saveAll()">Save check-in ✓</button>`
+    : `<button class="cf-btn cf-next" onclick="nextStep()">Next →</button>`;
+
+  // Edit-mode overrides: two-button footer, content swaps if pending delete
+  let bodyContentHtml = contentHtml;
+  let footerHtml = `
+    ${currentStep > 0 ? `<button class="cf-btn cf-prev" onclick="prevStep()">‹</button>` : ''}
+    ${footerBtn}`;
+
+  if (editingEntryId) {
+    if (pendingDelete) {
+      bodyContentHtml = `
+        <div class="delete-notice">
+          <div class="dn-icon">🗑️</div>
+          <div class="dn-title">This entry will be deleted</div>
+          <div class="dn-sub">Tap Save changes to confirm, or Undo to keep it.</div>
+        </div>`;
+      footerHtml = `
+        <button class="cf-btn cf-undo" onclick="undoPendingDelete()">Undo</button>
+        <button class="cf-btn cf-save" onclick="saveEditedEntry()">Save changes ✓</button>`;
+    } else {
+      footerHtml = `
+        <button class="cf-btn cf-delete" onclick="markPendingDelete()">Delete entry</button>
+        <button class="cf-btn cf-save" onclick="saveEditedEntry()">Save changes ✓</button>`;
+    }
+  }
+
+  area.innerHTML = `
+    <div class="step-dots">${editingEntryId ? '' : dots}</div>
+    <div class="symptom-hero">
+      <div class="symptom-number">${editingEntryId ? '' : (currentStep + 1) + ' of ' + syms.length}</div>
+      <div class="choice-label" style="margin-bottom:6px">${cat}</div>
+      <div class="symptom-big-name">${sym.name}</div>
+      <div class="symptom-prev">${editingEntryId ? '' : prevNote}</div>
+    </div>
+    ${bodyContentHtml}
+    <div class="carousel-footer">
+      ${footerHtml}
+    </div>`;
+}
+
+function setDraft(symId, field, val) {
+  if (!draft[symId]) draft[symId] = {};
+  const current = draft[symId][field];
+
+  if (field === 'relative' && val === 'better') {
+    // better → much-better → null → better…
+    draft[symId][field] = current === 'better' ? 'much-better'
+                        : current === 'much-better' ? null : 'better';
+  } else if (field === 'relative' && val === 'worse') {
+    // worse → much-worse → null → worse…
+    draft[symId][field] = current === 'worse' ? 'much-worse'
+                        : current === 'much-worse' ? null : 'worse';
+  } else {
+    // same + all absolute values: simple toggle
+    draft[symId][field] = current === val ? null : val;
+  }
+  renderCarousel();
+}
+
+function nextStep() { currentStep++; renderCarousel(); }
+function prevStep() { currentStep = Math.max(0, currentStep-1); renderCarousel(); }
+
+// Direct field update without re-render (keeps textarea focus)
+function setDraftField(symId, field, val) {
+  if (!draft[symId]) draft[symId] = {};
+  draft[symId][field] = val;
+}
+
+// ── Occurrence helpers ──
+function setOccMode(symId, mode) {
+  if (!draft[symId]) draft[symId] = {};
+  draft[symId].mode = mode;
+  if (mode === 'entries' && !draft[symId].entries) draft[symId].entries = [];
+  renderCarousel();
+}
+function addOccEntry(symId) {
+  if (!draft[symId]) draft[symId] = {};
+  draft[symId].mode = 'entries';
+  if (!draft[symId].entries) draft[symId].entries = [];
+  draft[symId].entries.push({ time: '', notes: '' });
+  renderCarousel();
+}
+function removeOccEntry(symId, idx) {
+  if (!draft[symId] || !draft[symId].entries) return;
+  draft[symId].entries.splice(idx, 1);
+  if (!draft[symId].entries.length) draft[symId].mode = null;
+  renderCarousel();
+}
+function activateOccTime(symId, idx) {
+  const input = document.getElementById(`occ-ti-${symId}-${idx}`);
+  if (!input) return;
+  input.style.display = 'block';
+  input.focus();
+  try { input.showPicker(); } catch(e) {}
+}
+function handleOccTimeSelect(el) {
+  const symId = el.dataset.symid;
+  const idx   = parseInt(el.dataset.idx);
+  if (!draft[symId] || !draft[symId].entries) return;
+  const val = el.value || '';
+  draft[symId].entries[idx].time = val;
+  // Update the display div in-place — calling renderCarousel() here destroys
+  // the input element which dismisses the iOS native time picker prematurely
+  const display = el.previousElementSibling;
+  if (display) {
+    display.textContent = val ? fmtTime(val) : 'None';
+    display.classList.toggle('time-is-set', !!val);
+  }
+  el.style.display = 'none';
+}
+function setOccEntryNote(symId, idx, val) {
+  if (!draft[symId] || !draft[symId].entries) return;
+  draft[symId].entries[idx].notes = val;
+}
+function setOccNoneNote(symId, val) {
+  if (!draft[symId]) draft[symId] = {};
+  draft[symId].noneNotes = val;
+}
+
+// Kept for General/Symptoms notes (no re-render)
+function setDraftField(symId, field, val) {
+  if (!draft[symId]) draft[symId] = {};
+  draft[symId][field] = val;
+}
+
+function saveAll() {
+  // remove existing for this date+period
+  state.entries = state.entries.filter(e => !(e.date === currentDate && e.period === currentPeriod));
+
+  state.symptoms.forEach(sym => {
+    const d   = draft[sym.id] || {};
+    const cat = sym.category || 'General';
+
+    if (cat === 'Occurrences') {
+      const occ = d;
+      if (occ.mode === 'none') {
+        state.entries.push({
+          id: Date.now() + Math.random(),
+          savedAt: Date.now(),
+          date: currentDate, period: currentPeriod,
+          symptomId: sym.id, symptomName: sym.name, category: 'Occurrences',
+          occMode: 'none', time: null, notes: occ.noneNotes || null,
+          relative: null, absolute: null
+        });
+      } else if (occ.mode === 'entries' && occ.entries && occ.entries.length) {
+        occ.entries.forEach((entry, i) => {
+          if (entry.time || entry.notes) {
+            // Use the user-entered time as the savedAt if available
+            const savedAt = entry.time
+              ? new Date(`${currentDate}T${entry.time}:00`).getTime()
+              : Date.now();
+            state.entries.push({
+              id: Date.now() + Math.random() + i,
+              savedAt,
+              date: currentDate, period: currentPeriod,
+              symptomId: sym.id, symptomName: sym.name, category: 'Occurrences',
+              occMode: 'entry', time: entry.time || null, notes: entry.notes || null,
+              relative: null, absolute: null
+            });
+          }
+        });
+      }
+    } else {
+      const hasData = d.relative || d.absolute || d.notes;
+      if (hasData) {
+        state.entries.push({
+          id: Date.now() + Math.random(),
+          savedAt: Date.now(),
+          date: currentDate, period: currentPeriod,
+          symptomId: sym.id, symptomName: sym.name,
+          category: cat, relative: d.relative || null,
+          absolute: d.absolute || null, time: null, notes: d.notes || null
+        });
+      }
+    }
+  });
+
+  persist();
+  draft = {};
+  renderSummary();
+}
+
+function renderSummary() {
+  const area = document.getElementById('carousel-area');
+  if (!area) return;
+
+  const periodShort = {day:'All day', morning:'Morn', afternoon:'Aft', evening:'Eve'};
+  const periodLabel = periodShort[currentPeriod] || currentPeriod;
+  const d = new Date(currentDate + 'T12:00:00');
+  const dateLabel = d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+
+  const savedEntries = state.entries.filter(e => e.date === currentDate && e.period === currentPeriod);
+
+  function badgesFor(e) {
+    if (!e) return '';
+    if (e.category === 'Occurrences') {
+      if (e.occMode === 'none') return `<span class="badge b-none">none</span>`;
+      if (e.time) return `<span class="badge b-none">${fmtTime(e.time)}</span>`;
+      return '';
+    }
+    let b = '';
+    if (e.relative) b += `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>`;
+    if (e.absolute) b += `<span class="badge b-${e.absolute}">${FACE_LABEL[e.absolute]||e.absolute}</span>`;
+    return b;
+  }
+
+  const rows = state.symptoms.map(sym => {
+    const symEntries = savedEntries.filter(e => e.symptomId === sym.id);
+    if (!symEntries.length) return '';
+
+    // Current — one row per occurrence entry, single row for others
+    const nowBadges = symEntries.map(e => `<div>${badgesFor(e)}</div>`).join('');
+
+    // Prior
+    const prev = getPrev(sym.id);
+    let priorWhen = '', priorBadges = '';
+    if (prev) {
+      const ps = periodShort[prev.period] || prev.period;
+      if (prev.date === currentDate) {
+        priorWhen = ps;
+      } else {
+        const pd = new Date(prev.date + 'T12:00:00');
+        priorWhen = pd.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + ps;
+      }
+      priorBadges = `<div class="summary-prior-badges">${badgesFor(prev)}</div>`;
+    } else {
+      priorWhen = 'First entry';
+    }
+
+    return `<div class="summary-row">
+      <span class="summary-sym">${escapeHtml(sym.name)}</span>
+      <span class="summary-now">${nowBadges}</span>
+      <span class="summary-prior">
+        <span class="summary-prior-when">${priorWhen}</span>
+        ${priorBadges}
+      </span>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  area.innerHTML = `
+    <div class="summary-header">
+      <div class="summary-saved">Saved ✓</div>
+      <div class="summary-when">${dateLabel} · ${periodLabel}</div>
+    </div>
+    ${rows || '<div style="color:var(--subtext);font-size:14px">Nothing logged this period.</div>'}
+    <button class="cf-btn cf-save" onclick="currentStep=0;renderCarousel()" style="margin-top:18px;width:100%">Done</button>`;
+}
+
+// ══ Single-entry edit / delete ══
+function startEditEntry(idStr) {
+  const entry = state.entries.find(e => String(e.id) === String(idStr));
+  if (!entry) return;
+  const sym = state.symptoms.find(s => s.id === entry.symptomId);
+  if (!sym) { toast('Original symptom no longer exists'); return; }
+
+  editingEntryId = entry.id;
+  editingSymId   = entry.symptomId;
+  pendingDelete  = false;
+  currentDate    = entry.date;
+  currentPeriod  = entry.period;
+  currentStep    = 0;
+  draft = {};
+
+  if (entry.category === 'Occurrences') {
+    if (entry.occMode === 'none') {
+      draft[sym.id] = { mode: 'none', noneNotes: entry.notes || '' };
+    } else {
+      draft[sym.id] = { mode: 'entries', entries: [{ time: entry.time || '', notes: entry.notes || '' }] };
+    }
+  } else {
+    draft[sym.id] = { relative: entry.relative || null, absolute: entry.absolute || null, notes: entry.notes || '' };
+  }
+
+  const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+  const dStr = new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  const bannerTxt = document.getElementById('edit-banner-text');
+  if (bannerTxt) bannerTxt.textContent = `Editing "${sym.name}" · ${dStr} · ${periodName[entry.period] || entry.period}`;
+  document.getElementById('edit-banner').style.display = 'flex';
+  document.getElementById('log-top').style.display = 'none';
+
+  switchScreen('log');
+  renderCarousel();
+}
+
+function markPendingDelete()   { pendingDelete = true;  renderCarousel(); }
+function undoPendingDelete()   { pendingDelete = false; renderCarousel(); }
+
+function cancelEditEntry() {
+  discardEditMode();
+  showHistoryScreen();
+}
+
+function saveEditedEntry() {
+  const entry = state.entries.find(e => e.id === editingEntryId);
+  if (!entry) { discardEditMode(); showHistoryScreen(); return; }
+
+  if (pendingDelete) {
+    state.entries = state.entries.filter(e => e.id !== editingEntryId);
+    persist();
+    discardEditMode();
+    showHistoryScreen();
+    toast('Entry deleted');
+    return;
+  }
+
+  const d = draft[editingSymId] || {};
+  if (entry.category === 'Occurrences') {
+    if (d.mode === 'none') {
+      entry.occMode = 'none'; entry.time = null; entry.notes = d.noneNotes || null;
+      entry.relative = null; entry.absolute = null;
+    } else if (d.mode === 'entries' && d.entries && d.entries[0]) {
+      entry.occMode = 'entry';
+      entry.time  = d.entries[0].time  || null;
+      entry.notes = d.entries[0].notes || null;
+      if (entry.time) entry.savedAt = new Date(`${entry.date}T${entry.time}:00`).getTime();
+    }
+  } else {
+    entry.relative = d.relative || null;
+    entry.absolute = d.absolute || null;
+    entry.notes    = d.notes || null;
+  }
+
+  persist();
+  discardEditMode();
+  showHistoryScreen();
+  toast('Entry updated ✓');
+}
+
+// ══ History ══
+function initHistoryFilters() {
+  const catSel  = document.getElementById('hist-cat-select');
+  const symSel  = document.getElementById('hist-sym-select');
+  const btnText = document.getElementById('htoggle-text');
+  const btnGraph= document.getElementById('htoggle-graph');
+  const btnTrend= document.getElementById('htoggle-trend');
+
+  if (catSel) catSel.addEventListener('change', function() {
+    histCatFilter = this.value;
+    histSymFilter = '';
+    refreshSymSelect(false);
+    updateHistViewToggle();
+    renderHistoryBody();
+  });
+  if (symSel) symSel.addEventListener('change', function() {
+    histSymFilter = this.value;
+    updateHistViewToggle();
+    renderHistoryBody();
+  });
+  if (btnText) btnText.addEventListener('click', function() {
+    histViewMode = 'text';
+    updateHistViewToggle();
+    renderHistoryBody();
+  });
+  if (btnGraph) btnGraph.addEventListener('click', function() {
+    histViewMode = 'graph';
+    updateHistViewToggle();
+    renderHistoryBody();
+  });
+  if (btnTrend) btnTrend.addEventListener('click', function() {
+    histViewMode = 'trend';
+    updateHistViewToggle();
+    renderHistoryBody();
+  });
+  document.querySelectorAll('.time-chip').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      histTimeFilter = this.dataset.period;
+      updateTimeChips();
+      renderHistoryBody();
+    });
+  });
+}
+
+function updateTimeChips() {
+  document.querySelectorAll('.time-chip').forEach(function(b) {
+    b.classList.toggle('time-chip-active', b.dataset.period === histTimeFilter);
+  });
+}
+function updateHistViewToggle() {
+  const toggle   = document.getElementById('hist-view-toggle');
+  const btnText  = document.getElementById('htoggle-text');
+  const btnGraph = document.getElementById('htoggle-graph');
+  const btnTrend = document.getElementById('htoggle-trend');
+  if (!toggle) return;
+  toggle.style.display = histSymFilter ? 'flex' : 'none';
+  if (btnText)  btnText.classList.toggle('htoggle-active',  histViewMode === 'text');
+  if (btnGraph) btnGraph.classList.toggle('htoggle-active', histViewMode === 'graph');
+  if (btnTrend) btnTrend.classList.toggle('htoggle-active', histViewMode === 'trend');
+}
+
+function refreshSymSelect(syncUI) {
+  const catSel = document.getElementById('hist-cat-select');
+  const symSel = document.getElementById('hist-sym-select');
+  if (syncUI && catSel) catSel.value = histCatFilter;
+  if (!symSel) return;
+  if (!histCatFilter) { symSel.style.display = 'none'; return; }
+  const syms = state.symptoms.filter(s => (s.category || 'General') === histCatFilter);
+  if (!syms.length) { symSel.style.display = 'none'; return; }
+  symSel.innerHTML = `<option value="">All ${histCatFilter}</option>` +
+    syms.map(s => `<option value="${s.id}" ${s.id === histSymFilter ? 'selected' : ''}>${s.name}</option>`).join('');
+  symSel.style.display = 'block';
+}
+
+function renderHistory() {
+  refreshSymSelect(true);
+  updateHistViewToggle();
+  updateTimeChips();
+  renderHistoryBody();
+}
+
+function renderHistoryBody() {
+  if (histSymFilter && histViewMode === 'graph')  { renderTrendGraph(histSymFilter, false); return; }
+  if (histSymFilter && histViewMode === 'trend')  { renderTrendGraph(histSymFilter, true);  return; }
+  if (histSymFilter) { renderFilteredHistory(histSymFilter); return; }
+  // In graph/trend mode with a category selected but no symptom yet: show empty (user is picking a symptom)
+  // In graph/trend mode with NO category selected: fall through to full grouped timeline
+  if ((histViewMode === 'graph' || histViewMode === 'trend') && histCatFilter) {
+    document.getElementById('history-body').innerHTML = ''; return;
+  }
+  renderGroupedHistory(histCatFilter);
+}
+
+// Shared single-entry row renderer
+function renderEntryRow(e) {
+  if (e.category === 'Occurrences') {
+    const inner = e.occMode === 'none'
+      ? `<span class="badge b-none">none</span>`
+      : (e.time ? `<span class="badge b-none">${fmtTime(e.time)}</span>` : '');
+    return `
+      <div class="tl-sym-row" style="flex-direction:column;align-items:flex-start">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="tl-sym-name">${escapeHtml(e.symptomName)}</span>${inner}
+        </div>
+        ${e.notes ? `<div class="tl-occ-notes">${escapeHtml(e.notes)}</div>` : ''}
+      </div>`;
+  }
+  const absLabel = FACE_LABEL[e.absolute] || e.absolute;
+  return `
+    <div class="tl-sym-row" style="display:block">
+      <div class="tl-row-grid">
+        <span class="tl-sym-name">${escapeHtml(e.symptomName)}</span>
+        <span class="tl-badge-col">${e.relative ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
+        <span class="tl-badge-col">${e.absolute ? `<span class="badge b-${e.absolute}">${absLabel}</span>` : ''}</span>
+      </div>
+      ${e.notes ? `<div class="tl-occ-notes">${escapeHtml(e.notes)}</div>` : ''}
+    </div>`;
+}
+
+// Renders date→period timeline groups for a flat list of entries
+function renderTimeline(entries) {
+  const periodOrder = {day:0, evening:1, afternoon:2, morning:3};
+  const periodName  = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+  const byDate = {};
+  entries.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = {};
+    if (!byDate[e.date][e.period]) byDate[e.date][e.period] = [];
+    byDate[e.date][e.period].push(e);
+  });
+  return Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
+    const d = new Date(date + 'T12:00:00');
+    const dateStr = date === todayStr() ? 'Today'
+      : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+    const periods = Object.keys(byDate[date]).sort((a,b) => (periodOrder[a]||0)-(periodOrder[b]||0));
+    const periodsHtml = periods.map((p, pi) => {
+      const items = byDate[date][p];
+      const dotColor = items.some(e=>e.relative==='worse'||e.relative==='much-worse') ? 'var(--worse)'
+                     : items.some(e=>e.relative==='better'||e.relative==='much-better') ? 'var(--better)'
+                     : 'var(--same)';
+      return `
+        <div class="timeline-entry">
+          <div class="tl-left">
+            <div class="tl-dot" style="background:${dotColor}"></div>
+            ${pi < periods.length-1 ? '<div class="tl-line"></div>' : ''}
+          </div>
+          <div class="tl-content">
+            <div class="tl-period">${periodName[p] || p}</div>
+            <div class="tl-symptoms">${items.map(renderEntryRow).join('')}</div>
+          </div>
+        </div>`;
+    }).join('');
+    return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${periodsHtml}</div>`;
+  }).join('');
+}
+
+// Date-first timeline: Date → Category → Period → Entries
+// Used for the "All entries" view to show each day's full picture across all categories
+function renderDateFirstTimeline(entries) {
+  const periodOrder = {day:0, evening:1, afternoon:2, morning:3};
+  const periodName  = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+
+  const byDate = {};
+  entries.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = {};
+    const cat = e.category || 'General';
+    if (!byDate[e.date][cat]) byDate[e.date][cat] = {};
+    if (!byDate[e.date][cat][e.period]) byDate[e.date][cat][e.period] = [];
+    byDate[e.date][cat][e.period].push(e);
+  });
+
+  return Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
+    const d = new Date(date + 'T12:00:00');
+    const dateStr = date === todayStr() ? 'Today'
+      : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+
+    const catsHtml = CATEGORIES.map((cat, catIdx) => {
+      if (!byDate[date][cat]) return '';
+      const periods = Object.keys(byDate[date][cat]).sort((a,b) => (periodOrder[a]||0)-(periodOrder[b]||0));
+      const periodsHtml = periods.map((p, pi) => {
+        const items = byDate[date][cat][p];
+        const dotColor = items.some(e=>e.relative==='worse'||e.relative==='much-worse') ? 'var(--worse)'
+                       : items.some(e=>e.relative==='better'||e.relative==='much-better') ? 'var(--better)'
+                       : 'var(--same)';
+        return `<div class="timeline-entry">
+          <div class="tl-left">
+            <div class="tl-dot" style="background:${dotColor}"></div>
+            ${pi < periods.length-1 ? '<div class="tl-line"></div>' : ''}
+          </div>
+          <div class="tl-content">
+            <div class="tl-period">${periodName[p] || p}</div>
+            <div class="tl-symptoms">${items.map(renderEntryRow).join('')}</div>
+          </div>
+        </div>`;
+      }).join('');
+      const isFirstCat = CATEGORIES.slice(0, catIdx).every(c => !byDate[date][c]);
+      return `<div class="date-cat-section${isFirstCat ? ' date-cat-first' : ''}">
+        <div class="date-cat-header">${cat}</div>
+        ${periodsHtml}
+      </div>`;
+    }).filter(Boolean).join('');
+
+    return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${catsHtml}</div>`;
+  }).join('');
+}
+
+// All or category-filtered: grouped timeline view
+function renderGroupedHistory(catFilter) {
+  const body = document.getElementById('history-body');
+  const catEntries = catFilter
+    ? state.entries.filter(e => (e.category || 'General') === catFilter)
+    : state.entries;
+  const entries = getTimeFilteredEntries(catEntries);
+
+  const timeLabel = histTimeFilter === 'all' ? '' : ' in the last ' + (histTimeFilter === '7d' ? '7 days' : histTimeFilter === '30d' ? '30 days' : '90 days');
+
+  if (!entries.length) {
+    body.innerHTML = `<div class="empty-state" style="padding-top:60px">
+      <div class="empty-icon">📈</div>
+      <h3>${catFilter ? 'No ' + catFilter + ' entries' : 'Nothing logged'}${timeLabel}</h3>
+      <p>${histTimeFilter === 'all' ? 'Your check-ins will appear here once you start logging.' : 'Try a longer time range.'}</p>
+    </div>`;
+    return;
+  }
+
+  if (catFilter) {
+    body.innerHTML = renderTimeline(entries);
+  } else {
+    body.innerHTML = renderDateFirstTimeline(entries);
+  }
+}
+
+// ── Trend graph ──
+function computeAbsoluteY(entry, cat) {
+  const faceMap  = {terrible:-2, poor:-1, neutral:0, good:1, great:2};
+  const levelMap = {none:0, mild:-1, moderate:-2, severe:-3};
+  if (cat === 'General' && entry.absolute != null) return (entry.absolute in faceMap) ? faceMap[entry.absolute] : null;
+  if (cat === 'Symptoms' && entry.absolute != null) return (entry.absolute in levelMap) ? levelMap[entry.absolute] : null;
+  return null;
+}
+
+// Buckets an all-day entry into whichever sub-period its REAL logged time sits closest to
+function bucketAllDayPeriod(entry) {
+  if (!entry.savedAt) return 'morning';
+  const d = new Date(entry.savedAt);
+  const hourFrac = d.getHours() + d.getMinutes() / 60;
+  let best = 'morning', bestDist = Infinity;
+  ['morning', 'afternoon', 'evening'].forEach(slot => {
+    const dist = Math.abs(hourFrac - NOTIONAL_HOURS[slot]);
+    if (dist < bestDist) { bestDist = dist; best = slot; }
+  });
+  return best;
+}
+
+const SLOT_ORDER = {morning: 0, afternoon: 1, evening: 2};
+const SLOT_FRACTION = {morning: 1/6, afternoon: 3/6, evening: 5/6};
+
+function dayIndex(dateA, dateB) {
+  // Whole-day difference between two YYYY-MM-DD strings, DST-safe (noon anchor)
+  const a = new Date(dateA + 'T12:00:00').getTime();
+  const b = new Date(dateB + 'T12:00:00').getTime();
+  return Math.round((b - a) / 86400000);
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+// Adaptive, calendar-anchored X-axis tick dates — independent of where data points fall.
+// Daily/every-N-day tiers step plainly from the range start; weekly anchors to Mondays;
+// monthly anchors to the 1st of the month — so labels always read as "clean" dates.
+function computeAxisTicks(startDate, endDate) {
+  const spanDays = dayIndex(startDate, endDate) + 1;
+  let intervalDays, anchor;
+  if (spanDays <= 7)        { intervalDays = 1;  anchor = 'day'; }
+  else if (spanDays <= 14)  { intervalDays = 2;  anchor = 'day'; }
+  else if (spanDays <= 30)  { intervalDays = 5;  anchor = 'day'; }
+  else if (spanDays <= 60)  { intervalDays = 7;  anchor = 'week'; }
+  else if (spanDays <= 120) { intervalDays = 14; anchor = 'week'; }
+  else if (spanDays <= 365) { intervalDays = 30; anchor = 'month'; }
+  else                      { intervalDays = 60; anchor = 'month'; }
+
+  const ticks = [];
+  if (anchor === 'day') {
+    for (let d = startDate; dayIndex(d, endDate) >= 0; d = addDays(d, intervalDays)) ticks.push(d);
+  } else if (anchor === 'week') {
+    const d0 = new Date(startDate + 'T12:00:00');
+    const dow = d0.getDay();
+    const daysToMonday = dow === 1 ? 0 : ((8 - dow) % 7);
+    for (let cur = addDays(startDate, daysToMonday); dayIndex(cur, endDate) >= 0; cur = addDays(cur, intervalDays)) ticks.push(cur);
+    if (!ticks.length) ticks.push(startDate);
+  } else {
+    const monthStep = Math.max(1, Math.round(intervalDays / 30));
+    const d0 = new Date(startDate + 'T12:00:00');
+    let cur = new Date(d0.getFullYear(), d0.getMonth(), 1);
+    if (cur < d0) cur.setMonth(cur.getMonth() + monthStep);
+    while (true) {
+      const curStr = cur.toISOString().slice(0,10);
+      if (dayIndex(curStr, endDate) < 0) break;
+      if (dayIndex(startDate, curStr) >= 0) ticks.push(curStr);
+      cur.setMonth(cur.getMonth() + monthStep);
+    }
+    if (!ticks.length) ticks.push(startDate);
+  }
+  return [...new Set(ticks)].filter(t => dayIndex(startDate,t) >= 0 && dayIndex(t,endDate) >= 0);
+}
+
+function getChartData(symId) {
+  const sym = state.symptoms.find(s => s.id === symId);
+  if (!sym) return null;
+  const cat = sym.category || 'General';
+
+  if (cat === 'Occurrences') {
+    // Unchanged — scatter only, no line, no missing-slot inference, no calendar-grid spacing
+    const points = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId))
+      .map(e => ({ts: getPlotTs(e), y: e.occMode === 'none' ? 0 : 1, id: e.id, period: e.period, relative: null, missing: false}))
+      .sort((a, b) => a.ts - b.ts);
+    return {sym, cat, points, calendarGrid: false};
+  }
+
+  // General / Symptoms: reconcile all-day vs intraday entries per date, infer missing slots
+  const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId));
+  const byDate = {};
+  entries.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+  const dates = Object.keys(byDate).sort();
+
+  let points = [];
+  dates.forEach(date => {
+    const dayEntries = byDate[date];
+    const intraday = {morning: null, afternoon: null, evening: null};
+    let allDayEntry = null;
+    dayEntries.forEach(e => {
+      if (e.period === 'day') {
+        if (!allDayEntry || (e.savedAt||0) > (allDayEntry.savedAt||0)) allDayEntry = e;
+      } else if (e.period in intraday) {
+        if (!intraday[e.period] || (e.savedAt||0) > (intraday[e.period].savedAt||0)) intraday[e.period] = e;
+      }
+    });
+
+    const usesSubPeriod = !!(intraday.morning || intraday.afternoon || intraday.evening);
+    const allDayBucket = allDayEntry ? bucketAllDayPeriod(allDayEntry) : null;
+
+    function entryHasPlottableData(e) {
+      // An entry is plottable if it has an absolute value OR a relative (trend) value
+      return computeAbsoluteY(e, cat) !== null || (e.relative && e.relative !== '');
+    }
+
+    if (!usesSubPeriod) {
+      if (allDayEntry && entryHasPlottableData(allDayEntry)) {
+        const y = computeAbsoluteY(allDayEntry, cat); // may be null (trend-only)
+        points.push({date, slot: allDayBucket, y, id: allDayEntry.id, isAllDay: true, missing: false, relative: allDayEntry.relative || null});
+      }
+      return;
+    }
+
+    ['morning', 'afternoon', 'evening'].forEach(slot => {
+      if (intraday[slot] && entryHasPlottableData(intraday[slot])) {
+        const y = computeAbsoluteY(intraday[slot], cat);
+        points.push({date, slot, y, id: intraday[slot].id, isAllDay: false, missing: false, relative: intraday[slot].relative || null});
+      } else if (allDayEntry && allDayBucket === slot && entryHasPlottableData(allDayEntry)) {
+        const y = computeAbsoluteY(allDayEntry, cat);
+        points.push({date, slot, y, id: allDayEntry.id, isAllDay: true, missing: false, relative: allDayEntry.relative || null});
+      } else {
+        points.push({date, slot, y: null, id: null, isAllDay: false, missing: true, relative: null});
+      }
+    });
+  });
+
+  points.sort((a, b) => a.date === b.date ? SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] : a.date.localeCompare(b.date));
+
+  // Carry-forward fill for missing y values (step-after logic).
+  // Entries with no absolute value use 0 as the assumed baseline until a real absolute is logged.
+  let lastRealY = null;
+  points.forEach(p => {
+    if (!p.missing) {
+      if (p.y !== null) {
+        lastRealY = p.y;
+      } else {
+        // Trend-only entry: use carry-forward if available, else 0 as baseline
+        p.y = lastRealY !== null ? lastRealY : 0;
+      }
+    } else {
+      p.y = lastRealY !== null ? lastRealY : 0;
+    }
+  });
+
+  // No extrapolation beyond known data — trim leading/trailing missing points
+  const firstRealIdx = points.findIndex(p => !p.missing);
+  let lastRealIdx = -1;
+  for (let i = points.length - 1; i >= 0; i--) { if (!points[i].missing) { lastRealIdx = i; break; } }
+  points = firstRealIdx === -1 ? [] : points.slice(firstRealIdx, lastRealIdx + 1).filter(p => !p.missing || p.y !== null);
+
+  return {sym, cat, points, calendarGrid: true};
+}
+
+function buildTrendArrow(cx, cy, relative) {
+  if (!relative) return '';
+  const TREND_COL = {
+    'much-better': '#3ecf8e', 'better': '#27a06e',
+    'same':        '#f0c040',
+    'worse':       '#d05555', 'much-worse': '#e05252'
+  };
+  const col = TREND_COL[relative];
+  if (!col) return '';
+
+  const L = 20, AH = 5;
+
+  if (relative === 'same') {
+    const ay = cy - 10, hx = 8;
+    const x1 = cx - hx, x2 = cx + hx;
+    return `<line x1="${x1}" y1="${ay}" x2="${x2}" y2="${ay}" stroke="${col}" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="${x2-AH},${ay-AH*.6} ${x2},${ay} ${x2-AH},${ay+AH*.6}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="${x1+AH},${ay-AH*.6} ${x1},${ay} ${x1+AH},${ay+AH*.6}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+
+  // Single arrow helper
+  function singleArrow(tx, ty, rad) {
+    const dx = L * Math.cos(rad), dy = -L * Math.sin(rad);
+    const x2 = tx + dx, y2 = ty + dy;
+    const revRad = rad + Math.PI;
+    const ah1x = (x2 + AH * Math.cos(revRad + Math.PI/6)).toFixed(1);
+    const ah1y = (y2 - AH * Math.sin(revRad + Math.PI/6)).toFixed(1);
+    const ah2x = (x2 + AH * Math.cos(revRad - Math.PI/6)).toFixed(1);
+    const ah2y = (y2 - AH * Math.sin(revRad - Math.PI/6)).toFixed(1);
+    return `<line x1="${tx.toFixed(1)}" y1="${ty.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="${ah1x},${ah1y} ${x2.toFixed(1)},${y2.toFixed(1)} ${ah2x},${ah2y}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+
+  const DEG = {'better': 30, 'worse': -30};
+
+  if (relative === 'better' || relative === 'worse') {
+    const rad = DEG[relative] * Math.PI / 180;
+    return singleArrow(cx, cy, rad);
+  }
+
+  // much-better / much-worse — two parallel arrows at 60° / -60°, offset ±4px horizontally
+  const baseRad = (relative === 'much-better' ? 60 : -60) * Math.PI / 180;
+  return singleArrow(cx - 4, cy, baseRad) + singleArrow(cx + 4, cy, baseRad);
+}
+
+function renderGraphPointPreview(entryId) {
+  const container = document.getElementById('graph-point-preview');
+  if (!container) return;
+
+  if (!entryId || String(entryId) === String(selectedGraphPointId)) {
+    // Same point tapped again — dismiss
+    selectedGraphPointId = null;
+    container.innerHTML = '';
+    return;
+  }
+  selectedGraphPointId = entryId;
+
+  const e = state.entries.find(en => String(en.id) === String(entryId));
+  if (!e) { container.innerHTML = ''; return; }
+
+  const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+  const periodLabel = e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${periodName[e.period] || e.period}</span>` : '';
+
+  let badgesHtml;
+  if (e.category === 'Occurrences') {
+    badgesHtml = `<div class="hist-entry-badges">
+      ${e.occMode === 'none' ? '<span class="badge b-none">none this period</span>' : ''}
+      ${e.time && e.occMode !== 'none' ? `<span class="badge b-none">${fmtTime(e.time)}</span>` : ''}
+    </div>`;
+  } else {
+    badgesHtml = `<div class="hist-badge-grid">
+      <span class="tl-badge-col">${e.relative ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
+      <span class="tl-badge-col">${e.absolute ? `<span class="badge b-${e.absolute}">${FACE_LABEL[e.absolute]||e.absolute}</span>` : ''}</span>
+    </div>`;
+  }
+
+  container.innerHTML = `<div class="hist-entry" id="graph-preview-card">
+    <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}${periodLabel}</div>
+    ${badgesHtml}
+    ${e.notes ? `<div class="hist-entry-notes">${escapeHtml(e.notes)}</div>` : ''}
+  </div>`;
+
+  document.getElementById('graph-preview-card').addEventListener('click', function() {
+    startEditEntry(entryId);
+  });
+}
+
+function renderTrendGraph(symId, showTrend) {
+  selectedGraphPointId = null;
+  const body = document.getElementById('history-body');
+  const data = getChartData(symId);
+  if (!data) { body.innerHTML = ''; return; }
+  const {sym, cat, points, calendarGrid} = data;
+
+  const header = `
+    <div class="hist-sym-header">${escapeHtml(sym.name)}</div>
+    <div class="hist-sym-cat">${sym.category || 'General'}</div>`;
+
+  if (!points.length) {
+    body.innerHTML = header + `<div style="padding:30px 0;text-align:center;color:var(--subtext);font-size:14px">No plottable data yet — add some absolute values first.</div>`;
+    return;
+  }
+
+  const VH = 260, mt = 18, mb = 46;
+  const ch = VH - mt - mb;
+
+  // Y axis (shared between both render paths)
+  let yMin, yMax, yTicks, yLabelFn;
+  if (cat === 'General') {
+    yMin = -2; yMax = 2; yTicks = [-2,-1,0,1,2];
+    var gLabels = ['Terr','Poor','Neut','Good','Grea'];
+    yLabelFn = function(v) { return gLabels[v + 2]; };
+  } else if (cat === 'Symptoms') {
+    yMin = -3; yMax = 0; yTicks = [-3,-2,-1,0];
+    var sLabels = ['Sevr','Modr','Mild','None'];
+    yLabelFn = function(v) { return sLabels[v + 3] !== undefined ? sLabels[v + 3] : String(v); };
+  } else {
+    yMin = 0; yMax = 1; yTicks = [0,1];
+    yLabelFn = function(v) { return v === 0 ? 'None' : 'Occd'; };
+  }
+  const yp = v => mt + (1 - (v - yMin) / (yMax - yMin)) * ch;
+  const col = cat === 'General' ? '#6c8eff' : cat === 'Symptoms' ? '#f0c040' : '#3ecf8e';
+  const realCount = points.filter(p => !p.missing).length;
+
+  if (!calendarGrid) {
+    // Occurrences — unchanged: single non-scrolling SVG, continuous time scale
+    const VW = 360, ml = 52, mr = 14;
+    const cw = VW - ml - mr;
+    const tsMin = points[0].ts, tsMax = points[points.length-1].ts;
+    const tsRange = tsMax - tsMin || 1;
+    const xp = ts => points.length === 1 ? ml + cw / 2 : ml + ((ts - tsMin) / tsRange) * cw;
+
+    const grid = yTicks.map(v => {
+      const y = yp(v).toFixed(1);
+      return `<line x1="${ml}" y1="${y}" x2="${VW-mr}" y2="${y}" stroke="#2e3348" stroke-width="1"/>
+              <text x="${ml-7}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#8890b0" font-size="11" font-family="-apple-system,sans-serif">${yLabelFn(v)}</text>`;
+    }).join('');
+
+    const n = points.length;
+    const tickCount = Math.min(5, n);
+    const tickIdx = tickCount === 1 ? [0] : Array.from({length: tickCount}, (_, i) => Math.round(i * (n-1) / (tickCount-1)));
+    const xLabels = [...new Set(tickIdx)].map(i => {
+      const p = points[i]; const x = xp(p.ts).toFixed(1);
+      const lbl = new Date(p.ts).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+      return `<line x1="${x}" y1="${(mt+ch).toFixed(1)}" x2="${x}" y2="${(mt+ch+4).toFixed(1)}" stroke="#2e3348" stroke-width="1"/>
+              <text x="${x}" y="${(mt+ch+16).toFixed(1)}" text-anchor="middle" fill="#8890b0" font-size="10" font-family="-apple-system,sans-serif">${lbl}</text>`;
+    }).join('');
+
+    const dots = points.map(p => {
+      const cx = parseFloat(xp(p.ts).toFixed(1)), cy = parseFloat(yp(p.y).toFixed(1));
+      const marker = `<circle cx="${cx}" cy="${cy}" r="4" fill="#21253a" stroke="${col}" stroke-width="1.6"/>`;
+      return `<g class="graph-point" data-entry-id="${p.id}"><circle class="graph-point-touch" cx="${cx}" cy="${cy}" r="14"/>${marker}</g>`;
+    }).join('');
+
+    const axes = `
+      <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ch}" stroke="#2e3348" stroke-width="1.5"/>
+      <line x1="${ml}" y1="${mt+ch}" x2="${VW-mr}" y2="${mt+ch}" stroke="#2e3348" stroke-width="1.5"/>`;
+
+    body.innerHTML = header +
+      `<div class="hist-sym-cat" style="margin-top:-4px">${realCount} data point${realCount!==1?'s':''}</div>
+      <div class="trend-graph-wrap" id="trend-graph-wrap">
+        <svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;overflow:visible">
+          ${grid}${axes}${xLabels}${dots}
+        </svg>
+      </div>
+      <div id="graph-point-preview"></div>`;
+
+    const wrap = document.getElementById('trend-graph-wrap');
+    if (wrap) wrap.onclick = function(ev) {
+      const pt = ev.target.closest('.graph-point');
+      if (pt) renderGraphPointPreview(pt.dataset.entryId);
+    };
+    return;
+  }
+
+  // General / Symptoms — constant-density calendar grid, pinned Y-axis, horizontal scroll
+  const DAY_W = 90, padL = 20, padR = 20, mlFixed = 52;
+  const rangeStart = points[0].date, rangeEnd = points[points.length - 1].date;
+  const numDays = dayIndex(rangeStart, rangeEnd) + 1;
+  const totalWidth = padL + numDays * DAY_W + padR;
+  const xFor = p => padL + dayIndex(rangeStart, p.date) * DAY_W + SLOT_FRACTION[p.slot] * DAY_W;
+  const dayCenterX = d => padL + dayIndex(rangeStart, d) * DAY_W + DAY_W / 2;
+
+  const yAxisSvg = `
+    <svg width="${mlFixed}" height="${VH}" viewBox="0 0 ${mlFixed} ${VH}" style="display:block">
+      ${yTicks.map(v => {
+        const y = yp(v).toFixed(1);
+        return `<text x="${mlFixed-9}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#8890b0" font-size="11" font-family="-apple-system,sans-serif">${yLabelFn(v)}</text>`;
+      }).join('')}
+      <line x1="${mlFixed-1}" y1="${mt}" x2="${mlFixed-1}" y2="${mt+ch}" stroke="#2e3348" stroke-width="1.5"/>
+    </svg>`;
+
+  const grid = yTicks.map(v => {
+    const y = yp(v).toFixed(1);
+    return `<line x1="0" y1="${y}" x2="${totalWidth}" y2="${y}" stroke="#2e3348" stroke-width="1"/>`;
+  }).join('');
+
+  const zeroRef = cat === 'General'
+    ? `<line x1="0" y1="${yp(0).toFixed(1)}" x2="${totalWidth}" y2="${yp(0).toFixed(1)}" stroke="#8890b0" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`
+    : '';
+
+  const ticks = computeAxisTicks(rangeStart, rangeEnd);
+  const xLabels = ticks.map(d => {
+    const x = dayCenterX(d).toFixed(1);
+    const lbl = new Date(d + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    return `<line x1="${x}" y1="${(mt+ch).toFixed(1)}" x2="${x}" y2="${(mt+ch+4).toFixed(1)}" stroke="#2e3348" stroke-width="1"/>
+            <text x="${x}" y="${(mt+ch+16).toFixed(1)}" text-anchor="middle" fill="#8890b0" font-size="10" font-family="-apple-system,sans-serif">${lbl}</text>`;
+  }).join('');
+
+  const path = points.length > 1
+    ? `<path d="${points.map((p,i) => i===0
+        ? `M${xFor(p).toFixed(1)},${yp(p.y).toFixed(1)}`
+        : `H${xFor(p).toFixed(1)} V${yp(p.y).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.75"/>`
+    : '';
+
+  const dots = points.map(p => {
+    const cx = parseFloat(xFor(p).toFixed(1)), cy = parseFloat(yp(p.y).toFixed(1));
+    if (p.missing) return `<line x1="${cx-2}" y1="${cy-2}" x2="${cx+2}" y2="${cy+2}" stroke="#21253a" stroke-width="2.5" stroke-linecap="round"/><line x1="${cx+2}" y1="${cy-2}" x2="${cx-2}" y2="${cy+2}" stroke="#21253a" stroke-width="2.5" stroke-linecap="round"/><line x1="${cx-2}" y1="${cy-2}" x2="${cx+2}" y2="${cy+2}" stroke="${col}" stroke-width="1.2" stroke-linecap="round"/><line x1="${cx+2}" y1="${cy-2}" x2="${cx-2}" y2="${cy+2}" stroke="${col}" stroke-width="1.2" stroke-linecap="round"/>`;
+    const marker = p.isAllDay
+      ? `<path d="M${cx},${cy-6.5} L${cx+6.5},${cy} L${cx},${cy+6.5} L${cx-6.5},${cy} Z" fill="${col}" stroke="#21253a" stroke-width="2"/>`
+      : `<circle cx="${cx}" cy="${cy}" r="4" fill="#21253a" stroke="${col}" stroke-width="1.6"/>`;
+    const arrow = showTrend ? buildTrendArrow(cx, cy, p.relative) : '';
+    return `<g class="graph-point" data-entry-id="${p.id}"><circle class="graph-point-touch" cx="${cx}" cy="${cy}" r="14"/>${arrow}${marker}</g>`;
+  }).join('');
+
+  const axesBottom = `<line x1="0" y1="${(mt+ch).toFixed(1)}" x2="${totalWidth}" y2="${(mt+ch).toFixed(1)}" stroke="#2e3348" stroke-width="1.5"/>`;
+
+  body.innerHTML =
+    `<div class="graph-header-row">
+      <div>
+        <div class="hist-sym-header">${escapeHtml(sym.name)}</div>
+        <div class="hist-sym-cat">${sym.category || 'General'}</div>
+        <div class="hist-sym-cat" style="margin-top:-4px">${realCount} data point${realCount!==1?'s':''}</div>
+      </div>
+      <div class="graph-legend">
+        <div class="graph-legend-item">
+          <svg width="11" height="11" viewBox="0 0 11 11">
+            <path d="M5.5,0 L11,5.5 L5.5,11 L0,5.5 Z" fill="${col}"/>
+          </svg>All day
+        </div>
+        <div class="graph-legend-item">
+          <svg width="11" height="11" viewBox="0 0 11 11">
+            <circle cx="5.5" cy="5.5" r="4.5" fill="${col}"/>
+          </svg>Intraday
+        </div>
+      </div>
+    </div>
+    <div class="trend-graph-wrap">
+      <div class="chart-flex">
+        <div class="chart-yaxis-fixed">${yAxisSvg}</div>
+        <div class="chart-scroll" id="chart-scroll-area">
+          <svg width="${totalWidth}" height="${VH}" viewBox="0 0 ${totalWidth} ${VH}" style="display:block">
+            ${grid}${zeroRef}${axesBottom}${xLabels}${path}${dots}
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div id="graph-point-preview"></div>`;
+
+  const wrap = document.querySelector('.trend-graph-wrap');
+  if (wrap) wrap.onclick = function(ev) {
+    const pt = ev.target.closest('.graph-point');
+    if (pt) renderGraphPointPreview(pt.dataset.entryId);
+  };
+
+  const scrollArea = document.getElementById('chart-scroll-area');
+  if (scrollArea) requestAnimationFrame(() => { scrollArea.scrollLeft = scrollArea.scrollWidth; });
+}
+
+// ══ Print ══
+const PERIOD_NAME_MAP = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+
+function prBadgeColor(type) {
+  const map = {
+    'better': '#1d8a52', 'much-better': '#0f6e3d', 'same': '#a8780a',
+    'worse': '#c0392b', 'much-worse': '#922a1e',
+    'none': '#666666', 'mild': '#1d8a52', 'moderate': '#a8780a', 'severe': '#c0392b',
+    'terrible': '#922a1e', 'poor': '#c0392b', 'neutral': '#a8780a', 'good': '#1d8a52', 'great': '#0f6e3d'
+  };
+  return map[type] || '#444';
+}
+
+function getPrintScopeLabel() {
+  if (histSymFilter) {
+    const sym = state.symptoms.find(s => s.id === histSymFilter);
+    return sym ? `Symptom: ${sym.name}` : 'Symptom';
+  }
+  if (histCatFilter) return `Category: ${histCatFilter}`;
+  return 'All entries';
+}
+
+function getPrintTimeLabel() {
+  return histTimeFilter === 'all' ? 'All time'
+    : histTimeFilter === '7d' ? 'Last 7 days'
+    : histTimeFilter === '30d' ? 'Last 30 days' : 'Last 90 days';
+}
+
+function prRenderGridEntryRow(e) {
+  let trendBadge = '', statusBadge = '';
+  if (e.category === 'Occurrences') {
+    if (e.occMode === 'none') statusBadge = `<span class="pr-badge" style="color:${prBadgeColor('none')}">none</span>`;
+    else if (e.time) statusBadge = `<span class="pr-badge" style="color:${prBadgeColor('none')}">${fmtTime(e.time)}</span>`;
+  } else {
+    if (e.relative) trendBadge = `<span class="pr-badge" style="color:${prBadgeColor(e.relative)}">${e.relative.replace('-',' ')}</span>`;
+    if (e.absolute) {
+      const label = FACE_LABEL[e.absolute] || e.absolute;
+      statusBadge = `<span class="pr-badge" style="color:${prBadgeColor(e.absolute)}">${label}</span>`;
+    }
+  }
+  return `
+    <div class="pr-row-grid">
+      <span class="pr-entry-name">${e.symptomName}</span>
+      <span>${trendBadge}</span>
+      <span>${statusBadge}</span>
+    </div>
+    ${e.notes ? `<div class="pr-notes" style="margin-left:0;margin-bottom:4px">${e.notes}</div>` : ''}`;
+}
+
+function prRenderSymptomEntryRow(e) {
+  if (e.category === 'Occurrences') {
+    let badge = '';
+    if (e.occMode === 'none') badge = `<span class="pr-badge" style="color:${prBadgeColor('none')}">none</span>`;
+    else if (e.time) badge = `<span class="pr-badge" style="color:${prBadgeColor('none')}">${fmtTime(e.time)}</span>`;
+    return `
+      <div class="pr-entry">
+        <span class="pr-entry-time">${fmtDateTime(e.savedAt, e.date)}</span>
+        ${badge}
+        ${e.notes ? `<div class="pr-notes">${e.notes}</div>` : ''}
+      </div>`;
+  }
+  const trendBadge = e.relative ? `<span class="pr-badge" style="color:${prBadgeColor(e.relative)}">${e.relative.replace('-',' ')}</span>` : '';
+  const statusBadge = e.absolute ? `<span class="pr-badge" style="color:${prBadgeColor(e.absolute)}">${FACE_LABEL[e.absolute]||e.absolute}</span>` : '';
+  const periodTxt = ` · ${PERIOD_NAME_MAP[e.period] || e.period}`;
+  return `
+    <div class="pr-entry" style="display:block">
+      <div class="pr-entry-time">${fmtDateTime(e.savedAt, e.date)}${periodTxt}</div>
+      <div class="pr-sym-badge-grid">
+        <span>${trendBadge}</span>
+        <span>${statusBadge}</span>
+      </div>
+      ${e.notes ? `<div class="pr-notes">${e.notes}</div>` : ''}
+    </div>`;
+}
+
+const PR_PERIOD_ORDER = {day:0, evening:1, afternoon:2, morning:3};
+
+// Mirrors the on-screen All/Category timeline: Date → Period subheader → grid-aligned entry rows
+function buildPrintGroupedBody(entries, groupByCategory) {
+  if (!entries.length) return `<div class="pr-empty">No entries in this range.</div>`;
+
+  function dateGroupsHtml(entryList) {
+    const byDate = {};
+    entryList.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+    const sortedDates = Object.keys(byDate).sort((a,b) => b.localeCompare(a));
+    return sortedDates.map(date => {
+      const items = byDate[date];
+      const d = new Date(date + 'T12:00:00');
+      const dateStr = d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+      const byPeriod = {};
+      items.forEach(e => { (byPeriod[e.period] = byPeriod[e.period] || []).push(e); });
+      const periods = Object.keys(byPeriod).sort((a,b) => (PR_PERIOD_ORDER[a]||0) - (PR_PERIOD_ORDER[b]||0));
+      const periodsHtml = periods.map(p =>
+        `<div class="pr-period-title">${PERIOD_NAME_MAP[p] || p}</div>${byPeriod[p].map(prRenderGridEntryRow).join('')}`
+      ).join('');
+      return `<div class="pr-date">${dateStr}</div>${periodsHtml}`;
+    }).join('');
+  }
+
+  if (!groupByCategory) return dateGroupsHtml(entries);
+
+  return CATEGORIES.map(cat => {
+    const catEntries = entries.filter(e => (e.category || 'General') === cat);
+    if (!catEntries.length) return '';
+    return `<div class="pr-cat-title">${cat}</div>${dateGroupsHtml(catEntries)}`;
+  }).filter(Boolean).join('');
+}
+
+// Flat chronological list for the single-symptom List-mode scope
+function buildPrintSymptomListBody(entries) {
+  if (!entries.length) return `<div class="pr-empty">No entries in this range.</div>`;
+  const sorted = [...entries].sort((a,b) => (b.savedAt||0) - (a.savedAt||0) || b.date.localeCompare(a.date));
+  return sorted.map(prRenderSymptomEntryRow).join('');
+}
+
+function buildPrintGraphSVG(symId, showTrend) {
+  const data = getChartData(symId);
+  if (!data || !data.points.length) return `<div class="pr-empty">No plottable data yet.</div>`;
+  const {cat, points, calendarGrid} = data;
+
+  const VW = 680, VH = 320;
+  const ml = 60, mr = 20, mt = 20, mb = 50;
+  const cw = VW - ml - mr, ch = VH - mt - mb;
+
+  let yMin, yMax, yTicks, yLabelFn;
+  if (cat === 'General') {
+    yMin = -2; yMax = 2; yTicks = [-2,-1,0,1,2];
+    var gLabels = ['Terr','Poor','Neut','Good','Grea'];
+    yLabelFn = v => gLabels[v + 2];
+  } else if (cat === 'Symptoms') {
+    yMin = -3; yMax = 0; yTicks = [-3,-2,-1,0];
+    var sLabels = ['Sevr','Modr','Mild','None'];
+    yLabelFn = v => sLabels[v + 3];
+  } else {
+    yMin = 0; yMax = 1; yTicks = [0,1];
+    yLabelFn = v => v === 0 ? 'None' : 'Occd';
+  }
+  const yp = v => mt + (1 - (v - yMin) / (yMax - yMin)) * ch;
+  const col = cat === 'General' ? '#2c4ec9' : cat === 'Symptoms' ? '#a8780a' : '#1d8a52';
+
+  const grid = yTicks.map(v => {
+    const y = yp(v).toFixed(1);
+    return `<line x1="${ml}" y1="${y}" x2="${VW-mr}" y2="${y}" stroke="#ddd" stroke-width="1"/>
+            <text x="${ml-8}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#444" font-size="12">${yLabelFn(v)}</text>`;
+  }).join('');
+
+  const zeroRef = cat === 'General'
+    ? `<line x1="${ml}" y1="${yp(0).toFixed(1)}" x2="${VW-mr}" y2="${yp(0).toFixed(1)}" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>`
+    : '';
+
+  const axes = `
+    <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ch}" stroke="#999" stroke-width="1.3"/>
+    <line x1="${ml}" y1="${mt+ch}" x2="${VW-mr}" y2="${mt+ch}" stroke="#999" stroke-width="1.3"/>`;
+
+  if (!calendarGrid) {
+    // Occurrences — unchanged continuous time scale
+    const n = points.length;
+    const tsMin = points[0].ts, tsMax = points[points.length-1].ts;
+    const tsRange = tsMax - tsMin || 1;
+    const xp = ts => n === 1 ? ml + cw/2 : ml + ((ts - tsMin) / tsRange) * cw;
+
+    const tickCount = Math.min(6, n);
+    const tickIdx = tickCount === 1 ? [0] : Array.from({length: tickCount}, (_, i) => Math.round(i * (n-1) / (tickCount-1)));
+    const xLabels = [...new Set(tickIdx)].map(i => {
+      const p = points[i]; const x = xp(p.ts).toFixed(1);
+      const lbl = new Date(p.ts).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+      return `<line x1="${x}" y1="${(mt+ch).toFixed(1)}" x2="${x}" y2="${(mt+ch+4).toFixed(1)}" stroke="#ddd"/>
+              <text x="${x}" y="${(mt+ch+18).toFixed(1)}" text-anchor="middle" fill="#444" font-size="11">${lbl}</text>`;
+    }).join('');
+
+    const dots = points.map(p => {
+      const cx = parseFloat(xp(p.ts).toFixed(1)), cy = parseFloat(yp(p.y).toFixed(1));
+      return `<circle cx="${cx}" cy="${cy}" r="3.7" fill="#fff" stroke="${col}" stroke-width="1.6"/>`;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="font-family:-apple-system,sans-serif">
+      ${grid}${zeroRef}${axes}${xLabels}${dots}
+    </svg>`;
+  }
+
+  // General / Symptoms — same calendar grid as on-screen, squeezed to fit the printed page width
+  const rangeStart = points[0].date, rangeEnd = points[points.length - 1].date;
+  const numDays = dayIndex(rangeStart, rangeEnd) + 1;
+  const dayW = cw / numDays;
+  const xFor = p => ml + dayIndex(rangeStart, p.date) * dayW + SLOT_FRACTION[p.slot] * dayW;
+  const dayCenterX = d => ml + dayIndex(rangeStart, d) * dayW + dayW / 2;
+
+  const ticks = computeAxisTicks(rangeStart, rangeEnd);
+  const xLabels = ticks.map(d => {
+    const x = dayCenterX(d).toFixed(1);
+    const lbl = new Date(d + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    return `<line x1="${x}" y1="${(mt+ch).toFixed(1)}" x2="${x}" y2="${(mt+ch+4).toFixed(1)}" stroke="#ddd"/>
+            <text x="${x}" y="${(mt+ch+18).toFixed(1)}" text-anchor="middle" fill="#444" font-size="11">${lbl}</text>`;
+  }).join('');
+
+  const path = points.length > 1
+    ? `<path d="${points.map((p,i) => i===0
+        ? `M${xFor(p).toFixed(1)},${yp(p.y).toFixed(1)}`
+        : `H${xFor(p).toFixed(1)} V${yp(p.y).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`
+    : '';
+
+  const dots = points.map(p => {
+    const cx = parseFloat(xFor(p).toFixed(1)), cy = parseFloat(yp(p.y).toFixed(1));
+    if (p.missing) return `<line x1="${cx-2}" y1="${cy-2}" x2="${cx+2}" y2="${cy+2}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><line x1="${cx+2}" y1="${cy-2}" x2="${cx-2}" y2="${cy+2}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><line x1="${cx-2}" y1="${cy-2}" x2="${cx+2}" y2="${cy+2}" stroke="#aaa" stroke-width="1.2" stroke-linecap="round"/><line x1="${cx+2}" y1="${cy-2}" x2="${cx-2}" y2="${cy+2}" stroke="#aaa" stroke-width="1.2" stroke-linecap="round"/>`;
+    const arrow = showTrend ? buildTrendArrow(cx, cy, p.relative) : '';
+    const marker = p.isAllDay
+      ? `<path d="M${cx},${cy-6} L${cx+6},${cy} L${cx},${cy+6} L${cx-6},${cy} Z" fill="${col}" stroke="#fff" stroke-width="1.5"/>`
+      : `<circle cx="${cx}" cy="${cy}" r="3.7" fill="#fff" stroke="${col}" stroke-width="1.6"/>`;
+    return arrow + marker;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="font-family:-apple-system,sans-serif">
+    ${grid}${zeroRef}${axes}${xLabels}${path}${dots}
+  </svg>`;
+}
+
+function buildPrintReport() {
+  const container = document.getElementById('print-report');
+  const profileName = getActiveProfile() ? getActiveProfile().name : '';
+  const generatedStr = new Date().toLocaleString('en-US', {dateStyle:'medium', timeStyle:'short'});
+
+  let bodyHtml;
+  if (histSymFilter && (histViewMode === 'graph' || histViewMode === 'trend')) {
+    const sym = state.symptoms.find(s => s.id === histSymFilter);
+    bodyHtml = `<div class="pr-graph-wrap">${buildPrintGraphSVG(histSymFilter, histViewMode === 'trend')}</div>`;
+    if (sym) bodyHtml = `<div class="pr-cat-title">${sym.name} — ${sym.category || 'General'}</div>` + bodyHtml;
+  } else if (histSymFilter) {
+    const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === histSymFilter));
+    bodyHtml = buildPrintSymptomListBody(entries);
+  } else {
+    const entries = getTimeFilteredEntries(
+      histCatFilter ? state.entries.filter(e => (e.category||'General') === histCatFilter) : state.entries
+    );
+    bodyHtml = buildPrintGroupedBody(entries, !histCatFilter);
+  }
+
+  container.innerHTML = `
+    <h1>Symptom Tracking Summary</h1>
+    <div class="pr-meta">Profile: ${profileName}</div>
+    <div class="pr-scope">${getPrintScopeLabel()} · ${getPrintTimeLabel()}</div>
+    ${bodyHtml}
+    <div class="pr-footer">Generated ${generatedStr}</div>`;
+}
+
+function getPrintAllFilteredEntries(entries) {
+  if (printAllTimeFilter === 'all') return entries;
+  const days = printAllTimeFilter === '7d' ? 7 : printAllTimeFilter === '30d' ? 30 : 90;
+  const cutoff = Date.now() - days * 86400000;
+  return entries.filter(e => (e.savedAt || new Date(e.date + 'T12:00:00').getTime()) >= cutoff);
+}
+
+function triggerPrintAll(format) {
+  const container = document.getElementById('print-report');
+  const profileName = getActiveProfile() ? getActiveProfile().name : '';
+  const timeLabel = printAllTimeFilter === 'all' ? 'All time'
+    : printAllTimeFilter === '7d' ? 'Last 7 days'
+    : printAllTimeFilter === '30d' ? 'Last 30 days' : 'Last 90 days';
+  const generatedStr = new Date().toLocaleString('en-US', {dateStyle:'medium', timeStyle:'short'});
+  const formatLabel = format === 'text' ? 'All entries — List'
+    : format === 'graphs' ? 'All symptoms — Chart'
+    : 'All symptoms — Chart + Trend';
+  const showTrend = format === 'graphs-trend';
+
+  let bodyHtml = '';
+  if (format === 'text') {
+    const entries = getPrintAllFilteredEntries(state.entries);
+    bodyHtml = buildPrintGroupedBody(entries, true);
+  } else {
+    bodyHtml = state.symptoms.map(sym => {
+      const svgHtml = buildPrintGraphSVG(sym.id, showTrend);
+      return `<div class="pr-cat-title" style="margin-top:24px">${escapeHtml(sym.name)} <span style="font-weight:400;font-size:12px;color:#555">— ${sym.category || 'General'}</span></div>
+        <div class="pr-graph-wrap">${svgHtml}</div>`;
+    }).join('');
+  }
+
+  container.innerHTML = `
+    <h1>Symptom Tracking Summary</h1>
+    <div class="pr-meta">Profile: ${escapeHtml(profileName)}</div>
+    <div class="pr-scope">${formatLabel} · ${timeLabel}</div>
+    ${bodyHtml}
+    <div class="pr-footer">Generated ${generatedStr}</div>`;
+
+  window.print();
+}
+
+function initPrintAllChips() {
+  document.querySelectorAll('#print-all-chips .time-chip').forEach(btn => {
+    btn.addEventListener('click', function() {
+      printAllTimeFilter = this.dataset.range;
+      document.querySelectorAll('#print-all-chips .time-chip').forEach(b =>
+        b.classList.toggle('time-chip-active', b === this));
+    });
+  });
+}
+
+function triggerPrint() {
+  buildPrintReport();
+  window.print();
+}
+
+function renderFilteredHistory(symId) {
+  const body = document.getElementById('history-body');
+  const sym  = state.symptoms.find(s => s.id === symId);
+  if (!sym) { body.innerHTML = ''; return; }
+  const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId))
+    .sort((a,b) => (b.savedAt||0) - (a.savedAt||0) || b.date.localeCompare(a.date));
+  const timeLabel = histTimeFilter === 'all' ? '' : ' in the last ' + (histTimeFilter === '7d' ? '7 days' : histTimeFilter === '30d' ? '30 days' : '90 days');
+  if (!entries.length) {
+    body.innerHTML = `<div class="hist-sym-header">${escapeHtml(sym.name)}</div><div class="hist-sym-cat">${sym.category||'General'}</div><div style="padding:20px 0;text-align:center;color:var(--subtext);font-size:14px">No entries${timeLabel}. ${histTimeFilter !== 'all' ? 'Try a longer range.' : ''}</div>`;
+    return;
+  }
+  const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+
+  body.innerHTML = `
+    <div class="hist-sym-header">${escapeHtml(sym.name)}</div>
+    <div class="hist-sym-cat">${sym.category || 'General'}</div>
+    ${entries.map(e => `
+      <div class="hist-entry tappable" data-entry-id="${e.id}">
+        <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}${e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${periodName[e.period] || e.period}</span>` : ''}</div>
+        ${e.category === 'Occurrences' ? `
+        <div class="hist-entry-badges">
+          ${e.occMode === 'none' ? '<span class="badge b-none">none this period</span>' : ''}
+          ${e.time && e.occMode !== 'none' ? `<span class="badge b-none">${fmtTime(e.time)}</span>` : ''}
+        </div>` : `
+        <div class="hist-badge-grid">
+          <span class="tl-badge-col">${e.relative ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
+          <span class="tl-badge-col">${e.absolute ? `<span class="badge b-${e.absolute}">${FACE_LABEL[e.absolute]||e.absolute}</span>` : ''}</span>
+        </div>`}
+        ${e.notes ? `<div class="hist-entry-notes">${escapeHtml(e.notes)}</div>` : ''}
+      </div>`).join('')}`;
+
+  body.onclick = function(ev) {
+    const card = ev.target.closest('.hist-entry.tappable');
+    if (card) startEditEntry(card.dataset.entryId);
+  };
+}
+
+// ══ Symptoms ══
+function syncAddBtn() {
+  const btn = document.querySelector('.sym-add-btn');
+  const inp = document.getElementById('new-sym');
+  if (btn && inp) btn.classList.toggle('ready', inp.value.trim().length > 0);
+}
+
+function selectCategory(cat) {
+  selectedCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.cat === cat));
+  const inp = document.getElementById('new-sym');
+  if (inp) {
+    const placeholders = {General:'Overall, Sleep, …', Symptoms:'Fatigue, Nausea, Pain…', Occurrences:'Vomiting, Bowel Movement, …'};
+    inp.placeholder = placeholders[cat] || '';
+  }
+  syncAddBtn();
+}
+
+function addSymptom() {
+  const inp = document.getElementById('new-sym');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (state.symptoms.find(s => s.name.toLowerCase() === name.toLowerCase())) { toast('Already in your list'); return; }
+  state.symptoms.push({ id: 'sym_' + Date.now(), name, category: selectedCategory });
+  inp.value = '';
+  syncAddBtn();
+  persist();
+  renderSymptoms();
+  renderCarousel();
+}
+
+function deleteSymptom(id) {
+  if (armedSymptomDeleteId !== id) {
+    clearTimeout(armedSymptomDeleteTimer);
+    armedSymptomDeleteId = id;
+    armedSymptomDeleteTimer = setTimeout(() => { armedSymptomDeleteId = null; renderSymptoms(); }, 3000);
+    renderSymptoms();
+    return;
+  }
+  clearTimeout(armedSymptomDeleteTimer);
+  armedSymptomDeleteId = null;
+  const sym = state.symptoms.find(s => s.id === id);
+  if (!sym) return;
+  state.symptoms = state.symptoms.filter(s => s.id !== id);
+  state.entries  = state.entries.filter(e => e.symptomId !== id);
+  persist();
+  renderSymptoms();
+  renderCarousel();
+}
+
+function saveRenameSymptom(id) {
+  const inp = document.getElementById(`sym-rename-input-${id}`);
+  if (!inp) return;
+  const name = inp.value.trim();
+  if (!name) return;
+  const sym = state.symptoms.find(s => s.id === id);
+  if (!sym) return;
+  sym.name = name;
+  state.entries.forEach(e => { if (e.symptomId === id) e.symptomName = name; });
+  renamingSymptomId = null;
+  persist();
+  renderSymptoms();
+  renderCarousel();
+}
+
+function renderSymptoms() {
+  const list = document.getElementById('sym-list');
+  if (!list) return;
+
+  const byCat = CATEGORIES.map(cat => ({
+    cat,
+    syms: state.symptoms.filter(s => (s.category || 'General') === cat)
+  })).filter(g => g.syms.length);
+
+  if (!byCat.length) {
+    list.innerHTML = '';
+    return;
+  }
+
+  list.innerHTML = byCat.map(({cat, syms}) => `
+    <div class="sym-cat-header">${cat}</div>
+    ${syms.map(s => {
+      if (renamingSymptomId === s.id) {
+        return `<div class="sym-item-row">
+          <input class="profile-name-input" id="sym-rename-input-${s.id}" value="${escapeHtml(s.name)}" style="flex:1">
+          <button class="profile-mini-btn profile-mini-save" data-sym-save="${s.id}">Save</button>
+          <button class="profile-mini-btn" data-sym-cancel-rename>Cancel</button>
+        </div>`;
+      }
+      return `<div class="sym-item-row">
+        <span class="sym-item-name">${escapeHtml(s.name)}</span>
+        <button class="profile-action-btn" data-sym-rename="${s.id}">✎</button>
+        <button class="profile-action-btn profile-del-btn ${armedSymptomDeleteId===s.id?'armed':''}" data-sym-del="${s.id}">${armedSymptomDeleteId===s.id?'Confirm?':TRASH_ICON}</button>
+      </div>`;
+    }).join('')}
+  `).join('');
+}
+
+function initSymptomsUI() {
+  const card = document.getElementById('sym-list-card');
+  if (!card) return;
+  card.addEventListener('click', function(ev) {
+    const renameBtn = ev.target.closest('[data-sym-rename]');
+    if (renameBtn) {
+      renamingSymptomId = renameBtn.dataset.symRename;
+      renderSymptoms();
+      setTimeout(() => { const i = document.getElementById(`sym-rename-input-${renamingSymptomId}`); if (i) { i.focus(); i.select(); } }, 50);
+      return;
+    }
+    const saveBtn = ev.target.closest('[data-sym-save]');
+    if (saveBtn) { saveRenameSymptom(saveBtn.dataset.symSave); return; }
+    if (ev.target.closest('[data-sym-cancel-rename]')) { renamingSymptomId = null; renderSymptoms(); return; }
+    const delBtn = ev.target.closest('[data-sym-del]');
+    if (delBtn) { deleteSymptom(delBtn.dataset.symDel); return; }
+  });
+}
+
+// ══ Export / Import ══
+const CSV_COLUMNS = ['Date','Period','Category','Symptom','Trend','Level','OccMode','Time','Notes','SavedAt'];
+
+function exportCSV() {
+  if (!state.entries.length) { toast('Nothing to export yet'); return; }
+  const rows = [CSV_COLUMNS];
+  [...state.entries].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+    rows.push([
+      e.date, e.period, e.category||'General', e.symptomName,
+      e.relative||'', e.absolute||'', e.occMode||'', e.time||'',
+      e.notes||'', e.savedAt||''
+    ]);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  const profileName = (getActiveProfile() ? getActiveProfile().name : 'data').replace(/[^a-z0-9]/gi, '-');
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0');
+  const timeStr = String(now.getHours()).padStart(2,'0') +
+    String(now.getMinutes()).padStart(2,'0');
+  a.download = `symptom-log-${profileName}-${dateStr}-${timeStr}.csv`; a.click();
+  toast('CSV downloaded');
+}
+
+// Parses one CSV line respecting quoted fields containing commas/quotes
+function parseCSVLine(line) {
+  const out = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQ) {
+      if (ch === '"') {
+        if (line[i+1] === '"') { cur += '"'; i++; } else { inQ = false; }
+      } else cur += ch;
+    } else {
+      if (ch === '"') inQ = true;
+      else if (ch === ',') { out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+function parseImportRows(text) {
+  const allLines = text.split('\n').filter(l => l.trim());
+  const header = parseCSVLine(allLines[0]).map(h => h.trim());
+  const idx = name => header.indexOf(name);
+  return allLines.slice(1).map(line => {
+    const cols = parseCSVLine(line);
+    const date       = cols[idx('Date')];
+    const symptomName = cols[idx('Symptom')];
+    if (!date || !symptomName) return null;
+    return {
+      date,
+      period:      cols[idx('Period')] || 'day',
+      category:    cols[idx('Category')] || 'General',
+      symptomName,
+      relative:    cols[idx('Trend')]   || null,
+      absolute:    cols[idx('Level')]   || null,
+      occMode:     idx('OccMode') > -1 ? (cols[idx('OccMode')] || null) : null,
+      time:        idx('Time')   > -1 ? (cols[idx('Time')]   || null) : null,
+      notes:       idx('Notes')  > -1 ? (cols[idx('Notes')]  || null) : null,
+      savedAt:     idx('SavedAt')> -1 && cols[idx('SavedAt')] ? Number(cols[idx('SavedAt')]) : null
+    };
+  }).filter(Boolean);
+}
+
+function applyImportRows(rows, replace) {
+  if (replace) state = { symptoms: [], entries: [] };
+  let count = 0;
+  rows.forEach(r => {
+    let sym = state.symptoms.find(s => s.name === r.symptomName);
+    if (!sym) { sym = {id:'sym_'+Date.now()+Math.random(), name:r.symptomName, category:r.category}; state.symptoms.push(sym); }
+    state.entries.push({
+      id: Date.now()+Math.random(), savedAt: r.savedAt || null,
+      date: r.date, period: r.period, symptomId: sym.id, symptomName: r.symptomName, category: r.category,
+      relative: r.relative, absolute: r.absolute, occMode: r.occMode, time: r.time, notes: r.notes
+    });
+    count++;
+  });
+  persist(); renderSymptoms(); renderCarousel();
+  if (document.getElementById('history-screen').classList.contains('active')) renderHistory();
+  toast(`Imported ${count} entries`);
+}
+
+function importCSV(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  ev.target.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = parseImportRows(e.target.result);
+      if (!rows.length) { toast('No valid rows found'); return; }
+      if (state.entries.length > 0) {
+        // Profile already has data — stash rows and show warning
+        pendingImportRows = rows;
+        const warn = document.getElementById('import-warning');
+        const msg  = document.getElementById('import-warning-msg');
+        if (warn && msg) {
+          msg.textContent = `This profile already has ${state.entries.length} entries. The CSV contains ${rows.length} rows.`;
+          warn.style.display = 'block';
+        }
+      } else {
+        applyImportRows(rows, false);
+      }
+    } catch (err) { toast('Import failed: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function confirmImport(mode) {
+  if (!pendingImportRows) return;
+  const rows = pendingImportRows;
+  pendingImportRows = null;
+  cancelImport();
+  applyImportRows(rows, mode === 'replace');
+}
+
+function cancelImport() {
+  pendingImportRows = null;
+  const warn = document.getElementById('import-warning');
+  if (warn) warn.style.display = 'none';
+}
+
+let armClearAllTimer = null;
+function tapClearAll() {
+  const btn = document.getElementById('clear-all-btn');
+  if (!btn) return;
+  if (btn.dataset.armed === 'true') {
+    state = {symptoms:[], entries:[]};
+    persist(); draft={}; currentStep=0;
+    renderCarousel(); renderSymptoms();
+    btn.dataset.armed = 'false';
+    btn.textContent = 'Clear all data';
+    clearTimeout(armClearAllTimer);
+    toast('All data cleared for this profile');
+  } else {
+    btn.dataset.armed = 'true';
+    btn.textContent = 'Tap again to confirm';
+    clearTimeout(armClearAllTimer);
+    armClearAllTimer = setTimeout(() => {
+      btn.dataset.armed = 'false';
+      btn.textContent = 'Clear all data';
+    }, 3000);
+  }
+}
+
+// ══ Toast ══
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ══ Init ══
+initProfiles();
+loadActiveProfileData();
+updateDateLabel();
+renderCarousel();
+renderSymptoms();
+initHistoryFilters();
+renderProfileBar();
+renderProfilesList();
+initProfilesUI();
+initSymptomsUI();
+initPrintAllChips();
+const editCancelBtn = document.getElementById('edit-cancel-btn');
+if (editCancelBtn) editCancelBtn.addEventListener('click', cancelEditEntry);
+const printBtn = document.getElementById('print-btn');
+if (printBtn) printBtn.addEventListener('click', triggerPrint);
+</script>
+</body>
+</html>
