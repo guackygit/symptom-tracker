@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -308,6 +311,7 @@ nav {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.8px; color: var(--subtext);
   padding: 10px 0 6px;
+  display: flex; align-items: center; gap: 5px;
 }
 .sym-item-row {
   display: flex; align-items: center; gap: 8px;
@@ -456,6 +460,19 @@ nav {
 .graph-point-touch { fill: transparent; }
 
 /* ── History symptom filter ── */
+.hist-section-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--subtext); margin-bottom: 8px;
+}
+.hist-context-label { margin-top: 10px; margin-bottom: 12px; }
+.hist-context-label .hist-sym-cat  { margin-bottom: 2px; }
+.hist-context-label .hist-sym-header { margin-bottom: 0; }
+.hist-context-name { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; color: var(--text); }
+.hist-context-cat  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--subtext); margin-top: 2px; }
+.hist-display-group {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 2px; display: flex; gap: 3px; margin-bottom: 6px;
+}
 .hist-filter-wrap { margin-bottom: 14px; }
 .hist-select {
   width: 100%; padding: 11px 38px 11px 14px; border-radius: 11px;
@@ -490,7 +507,7 @@ nav {
 .hist-view-row { display: flex; gap: 6px; margin-bottom: 12px; }
 .hvb {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 8px 4px; border-radius: 8px; border: 1px solid var(--border);
+  padding: 7px 4px; border-radius: 7px; border: 1px solid var(--border);
   background: var(--surface); color: var(--subtext); cursor: pointer; transition: all .15s;
 }
 .hvb.hvb-active   { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
@@ -550,13 +567,24 @@ nav {
 .ce-list-notes { font-size: 13px; color: var(--subtext); margin-top: 4px; }
 .ce-list-del   { flex-shrink: 0; }
 
-/* ── Care events setup cat selector ── */
-.ce-cat-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-.ce-cat-btn {
-  padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
+.event-type-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.event-type-pill {
+  padding: 12px 18px; border-radius: 10px; border: 2px solid var(--border);
   background: var(--surface); color: var(--subtext);
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
-  display: flex; align-items: center; gap: 4px;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.event-type-pill.selected { border-color: var(--accent); color: #fff; background: var(--accent); }
+.event-type-pill:active { opacity: .7; }
+#event-picker-area .ce-cat-btn { padding: 13px 6px; border-width: 2px; font-weight: 700; }
+#event-picker-area .ce-cat-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── Care events setup cat selector ── */
+.ce-cat-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.ce-cat-btn {
+  padding: 7px 6px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--subtext);
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%;
 }
 .ce-cat-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 .hist-view-toggle { display: none; gap: 8px; margin-bottom: 14px; }
@@ -571,7 +599,7 @@ nav {
 /* ── History time filter chips ── */
 .hist-time-chips { display: flex; gap: 6px; margin-bottom: 12px; }
 .time-chip {
-  flex: 1; padding: 7px 4px; border-radius: 8px; text-align: center;
+  flex: 1; padding: 9px 4px; border-radius: 7px; text-align: center;
   border: 1px solid var(--border); background: var(--surface);
   color: var(--subtext); font-size: 12px; font-weight: 700;
   cursor: pointer; transition: all .15s;
@@ -745,12 +773,18 @@ nav {
 #print-report .pr-footer { margin-top: 24px; font-size: 10px; color: #999; }
 
 @media print {
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
   body * { visibility: hidden; }
+  #app { background: white !important; }
   #print-report, #print-report * { visibility: visible; }
   #print-report {
     display: block !important;
     position: absolute; left: 0; top: 0; width: 100%;
     padding: 0.4in;
+    background: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -801,12 +835,7 @@ nav {
       </button></span>
       <span class="profile-label" id="profile-label-history"></span>
     </div>
-    <div class="hist-time-chips">
-      <button class="time-chip time-chip-active" data-period="all">All</button>
-      <button class="time-chip" data-period="7d">7 days</button>
-      <button class="time-chip" data-period="30d">30 days</button>
-      <button class="time-chip" data-period="90d">90 days</button>
-    </div>
+    <div class="hist-section-label">Data to display</div>
     <div class="hist-filter-wrap">
       <select class="hist-select" id="hist-cat-select">
         <option value="">All entries</option>
@@ -815,14 +844,29 @@ nav {
         <option value="Occurrences">Occurrences</option>
         <option value="Care Events">Care Events</option>
       </select>
-      <select class="hist-select" id="hist-sym-select" style="display:none;margin-top:8px"></select>
+      <select class="hist-select" id="hist-sym-select" style="margin-top:8px;opacity:0.4;pointer-events:none">
+        <option value="">Select a category first…</option>
+      </select>
     </div>
-    <div class="hist-view-row" id="hist-view-row">
-      <button class="hvb" id="hvb-text"  onclick="setHistMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-      <button class="hvb" id="hvb-graph" onclick="setHistMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
-      <button class="hvb hvb-on" id="hvb-trend" onclick="toggleHistTrend()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
-      <button class="hvb hvb-on" id="hvb-care"  onclick="toggleHistCare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+    <div class="hist-section-label">Display options</div>
+    <div class="hist-display-group" style="margin-bottom:6px">
+      <button class="time-chip time-chip-active" data-period="all">All</button>
+      <button class="time-chip" data-period="7d">7d</button>
+      <button class="time-chip" data-period="30d">30d</button>
+      <button class="time-chip" data-period="90d">90d</button>
+      <button class="time-chip" data-period="custom" onclick="toast('Custom date range coming soon')">Custom</button>
     </div>
+    <div style="display:flex;gap:6px">
+      <div class="hist-display-group" style="flex:1">
+        <button class="hvb" id="hvb-text"  onclick="setHistMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+        <button class="hvb" id="hvb-graph" onclick="setHistMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+      </div>
+      <div class="hist-display-group" style="flex:1">
+        <button class="hvb hvb-on" id="hvb-trend" onclick="toggleHistTrend()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
+        <button class="hvb hvb-on" id="hvb-care"  onclick="toggleHistCare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+      </div>
+    </div>
+    <div id="hist-context-label" class="hist-context-label"></div>
     <div id="history-body"></div>
   </div>
 
@@ -870,28 +914,19 @@ nav {
 
   <!-- ══ EXPORT ══ -->
   <div id="events-screen" class="screen">
-    <div class="exp-header screen-header">
-      <span>Events</span>
-      <span class="profile-label" id="profile-label-events"></span>
-    </div>
-    <div class="exp-card">
-      <div class="exp-card-title">Log Care Event</div>
-      <div class="exp-card-body">Record appointments, treatments, procedures and other milestones.</div>
-      <div class="event-date-row">
-        <button class="event-date-nav" onclick="shiftEventDate(-1)">‹</button>
-        <span class="event-date-label" id="event-date-label">Today</span>
-        <button class="event-date-nav" onclick="shiftEventDate(1)">›</button>
+    <div class="log-top">
+      <div class="screen-header log-header">
+        <span>Care</span>
+        <span class="profile-label" id="profile-label-events"></span>
       </div>
-      <select class="event-type-select" id="event-type-select" onchange="syncEventLogBtn()">
-        <option value="">Select event type…</option>
-      </select>
-      <textarea class="event-notes-input" id="event-notes" placeholder="Notes (optional)…" oninput="syncEventLogBtn()"></textarea>
-      <button class="event-log-btn" id="event-log-btn" onclick="logCareEvent()">Log Event</button>
+      <div class="log-date-row">
+        <button class="date-nav" onclick="shiftEventDate(-1)">‹</button>
+        <div class="date-label" id="event-date-label">Today</div>
+        <button class="today-btn" onclick="goEventToday()">Today</button>
+        <button class="date-nav" onclick="shiftEventDate(1)">›</button>
+      </div>
     </div>
-    <div class="exp-card">
-      <div class="exp-card-title">Recent Events</div>
-      <div id="care-events-list"></div>
-    </div>
+    <div class="carousel-area" id="event-picker-area"></div>
   </div>
 
   <div id="export-screen" class="screen">
@@ -902,17 +937,24 @@ nav {
     <div class="exp-card">
       <div class="exp-card-title">Print All Data</div>
       <div class="exp-card-body">Print or save a PDF of your full history. Choose a time range and format.</div>
-      <div class="hist-time-chips print-all-chips" id="print-all-chips" style="margin-bottom:14px">
+      <div class="hist-display-group" id="print-all-chips" style="margin-bottom:6px">
         <button class="time-chip time-chip-active" data-range="all">All</button>
-        <button class="time-chip" data-range="7d">7 days</button>
-        <button class="time-chip" data-range="30d">30 days</button>
-        <button class="time-chip" data-range="90d">90 days</button>
+        <button class="time-chip" data-range="7d">7d</button>
+        <button class="time-chip" data-range="30d">30d</button>
+        <button class="time-chip" data-range="90d">90d</button>
+        <button class="time-chip" data-range="custom" onclick="toast('Custom date range coming soon')">Custom</button>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
-        <button class="exp-btn exp-btn-primary" style="flex:1;padding:14px 4px" onclick="triggerPrintAll('text')">List</button>
-        <button class="exp-btn exp-btn-primary" style="flex:1;padding:14px 4px" onclick="triggerPrintAll('graphs')">Chart</button>
-        <button class="exp-btn exp-btn-primary" style="flex:1;padding:14px 4px" onclick="triggerPrintAll('graphs-trend')">Chart+Trend</button>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <div class="hist-display-group" style="flex:1">
+          <button class="hvb hvb-active" id="pa-hvb-text"  onclick="setPrintAllMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+          <button class="hvb"           id="pa-hvb-graph" onclick="setPrintAllMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+        </div>
+        <div class="hist-display-group" style="flex:1">
+          <button class="hvb hvb-on" id="pa-hvb-trend" onclick="togglePrintAllTrend()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
+          <button class="hvb hvb-on" id="pa-hvb-care"  onclick="togglePrintAllCare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+        </div>
       </div>
+      <button class="exp-btn exp-btn-primary" onclick="triggerPrintAll()">Print</button>
     </div>
     <div class="exp-card">
       <div class="exp-card-title">Export to CSV</div>
@@ -964,6 +1006,17 @@ nav {
   </nav>
 </div>
 <div id="print-report" class="print-only"></div>
+
+  <!-- ══ Nav Warning Overlay ══ -->
+  <div id="nav-warning" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.55);display:none;align-items:flex-end;justify-content:center">
+    <div style="background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">Unfinished check-in</div>
+      <div style="font-size:14px;color:var(--subtext);margin-bottom:20px">You have entries saved for this check-in. What would you like to do?</div>
+      <button onclick="navWarningKeep()" style="width:100%;padding:14px;border-radius:12px;background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">Keep entries</button>
+      <button onclick="navWarningDiscard()" style="width:100%;padding:14px;border-radius:12px;background:var(--surface);color:var(--worse);border:1px solid var(--border);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">Discard entries</button>
+      <button onclick="navWarningStay()" style="width:100%;padding:14px;border-radius:12px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);font-size:15px;font-weight:700;cursor:pointer">Stay</button>
+    </div>
+  </div>
 <div id="toast"></div>
 
 <script>
@@ -972,7 +1025,9 @@ let state = { symptoms: [], entries: [], careEventTypes: [], careEvents: [] };
 let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
-let selectedCECat = 'Medical visits'; // matches CE_CATS[0]
+let selectedCECat = 'Visits'; // matches CE_CATS[0]
+let selectedEventCat  = null;
+let selectedCETypeId  = null;
 let renamingCETypeId = null;
 let armedCETypeDeleteId = null;
 let armedCETypeDeleteTimer = null;
@@ -982,12 +1037,15 @@ let currentDate = todayStr();
 let currentPeriod = 'day';
 let currentStep = 0;
 let draft = {};
+let sessionSnapshot = null;   // { preSessionEntries: [] }
+let sessionDirty    = false;  // true once saveCurrentEntry fires this session
+let pendingNavTarget = null;  // screen name awaiting user confirmation
 
 const CATEGORIES = ['General', 'Symptoms', 'Occurrences'];
-const CE_CATS    = ['Medical visits','Procedures','Therapy','Diagnostics','Medication','Milestones'];
+const CE_CATS    = ['Visits','Procedures','Therapy','Diagnostics','Medication','Milestones'];
 
 const CE_ICON = {
-  'Medical visits': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  'Visits': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
   'Procedures':     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
   'Therapy':        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
   'Diagnostics':    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
@@ -1009,6 +1067,9 @@ let histViewMode  = 'text'; // 'text' | 'graph' | 'trend'
 let histTimeFilter = 'all'; // 'all' | '7d' | '30d' | '90d'
 let selectedGraphPointId = null;
 let printAllTimeFilter = 'all';
+let printAllMode  = 'text';
+let printAllTrend = true;
+let printAllCare  = true;
 let pendingImportRows = null; // holds parsed CSV rows while user chooses Replace vs Merge // currently tapped graph point
 
 // Edit/delete state
@@ -1135,11 +1196,11 @@ function renderProfileBar() {
 }
 
 function refreshAfterProfileChange() {
-  draft = {}; currentStep = 0;
+  draft = {}; currentStep = 0; sessionSnapshot = null; sessionDirty = false;
   discardEditMode();
   histCatFilter = ''; histSymFilter = ''; histViewMode = 'text'; histTimeFilter = 'all';
   updateDateLabel();
-  renderCarousel();
+  openCarousel();
   renderSymptoms();
   renderCETypes();
   renderEventTypeSelect();
@@ -1333,13 +1394,15 @@ function initProfilesUI() {
 // ══ Screens ══
 function switchScreen(name) {
   if (editingEntryId && name !== 'log') discardEditMode();
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(name + '-screen').classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
-  if (name === 'log')     { renderCarousel(); }
-  if (name === 'history') { histTimeFilter = 'all'; renderHistory(); }
-  if (name === 'symptoms') renderSymptoms();
-  if (name === 'events')  renderEventsScreen();
+  // Intercept if leaving log with an active dirty session
+  const logActive = document.getElementById('log-screen') && document.getElementById('log-screen').classList.contains('active');
+  if (name !== 'log' && logActive && sessionDirty) {
+    pendingNavTarget = name;
+    showNavWarning();
+    return;
+  }
+  if (name === 'log') { openCarousel(); doSwitchScreen('log'); return; }
+  doSwitchScreen(name);
 }
 
 // Returns to History screen WITHOUT resetting the time/category/symptom/view filters —
@@ -1372,24 +1435,116 @@ function shiftDate(n) {
   const d = new Date(currentDate + 'T12:00:00');
   d.setDate(d.getDate() + n);
   currentDate = d.toISOString().slice(0,10);
-  draft = {};
-  currentStep = 0;
   updateDateLabel();
-  renderCarousel();
+  openCarousel();
 }
 function goToday() {
   currentDate = todayStr();
-  draft = {};
-  currentStep = 0;
   updateDateLabel();
-  renderCarousel();
+  openCarousel();
 }
 function setPeriod(p) {
   currentPeriod = p;
   document.querySelectorAll('.pchip').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+  openCarousel();
+}
+
+// ══ Session management ══
+
+function openCarousel() {
+  // Snapshot pre-session state for this date+period
+  sessionSnapshot = {
+    preSessionEntries: state.entries
+      .filter(e => e.date === currentDate && e.period === currentPeriod)
+      .map(e => ({...e}))
+  };
+  sessionDirty    = false;
+  pendingNavTarget = null;
+  cancelConfirmMode = false;
+
+  // Pre-populate draft from existing entries
   draft = {};
+  const existing = state.entries.filter(e => e.date === currentDate && e.period === currentPeriod);
+  state.symptoms.forEach(sym => {
+    const symEntries = existing.filter(e => e.symptomId === sym.id);
+    if (!symEntries.length) return;
+    const cat = sym.category || 'General';
+    if (cat === 'Occurrences') {
+      const noneEntry = symEntries.find(e => e.occMode === 'none');
+      if (noneEntry) {
+        draft[sym.id] = { mode: 'none', noneNotes: noneEntry.notes || '' };
+      } else {
+        draft[sym.id] = { mode: 'entries', entries: symEntries.map(e => ({ time: e.time||'', notes: e.notes||'' })) };
+      }
+    } else {
+      const e = symEntries[0];
+      draft[sym.id] = { relative: e.relative||null, absolute: e.absolute||null, notes: e.notes||null };
+    }
+  });
+
   currentStep = 0;
+  const logTop = document.getElementById('log-top');
+  if (logTop) logTop.style.display = '';
   renderCarousel();
+}
+
+function discardSession() {
+  // Restore pre-session entries for this date+period
+  if (sessionSnapshot) {
+    state.entries = state.entries.filter(e => !(e.date === currentDate && e.period === currentPeriod));
+    sessionSnapshot.preSessionEntries.forEach(e => state.entries.push({...e}));
+    persist();
+  }
+  draft = {};
+  sessionSnapshot = null;
+  sessionDirty    = false;
+  cancelConfirmMode = false;
+  currentStep = 0;
+  const logTop = document.getElementById('log-top');
+  if (logTop) logTop.style.display = '';
+  renderCarousel();
+}
+
+function showNavWarning() {
+  const el = document.getElementById('nav-warning');
+  if (el) { el.style.display = 'flex'; }
+}
+
+function navWarningKeep() {
+  // Keep entries as-is, clear session, navigate away
+  sessionSnapshot = null; sessionDirty = false;
+  document.getElementById('nav-warning').style.display = 'none';
+  if (pendingNavTarget) { const t = pendingNavTarget; pendingNavTarget = null; doSwitchScreen(t); }
+}
+
+function navWarningDiscard() {
+  const target = pendingNavTarget;
+  pendingNavTarget = null;
+  document.getElementById('nav-warning').style.display = 'none';
+  // Restore pre-session entries then navigate
+  if (sessionSnapshot) {
+    state.entries = state.entries.filter(e => !(e.date === currentDate && e.period === currentPeriod));
+    sessionSnapshot.preSessionEntries.forEach(e => state.entries.push({...e}));
+    persist();
+  }
+  draft = {}; sessionSnapshot = null; sessionDirty = false; cancelConfirmMode = false; currentStep = 0;
+  const logTop = document.getElementById('log-top');
+  if (logTop) logTop.style.display = '';
+  if (target) doSwitchScreen(target);
+}
+
+function navWarningStay() {
+  pendingNavTarget = null;
+  document.getElementById('nav-warning').style.display = 'none';
+}
+
+function doSwitchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(name + '-screen').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+  if (name === 'history') { histTimeFilter = 'all'; renderHistory(); }
+  if (name === 'symptoms') renderSymptoms();
+  if (name === 'events')   renderEventsScreen();
 }
 
 // ══ Carousel ══
@@ -1703,6 +1858,7 @@ function saveCurrentEntry() {
     }
   }
   persist();
+  sessionDirty = true;
 }
 
 function nextStep() {
@@ -1725,16 +1881,7 @@ function prevStep() {
 
 function startCancelConfirm() { cancelConfirmMode = true; renderCarousel(); }
 function cancelConfirmKeep()   { cancelConfirmMode = false; renderCarousel(); }
-function cancelConfirmDiscard() {
-  state.entries = state.entries.filter(e =>
-    !(e.date === currentDate && e.period === currentPeriod)
-  );
-  persist();
-  draft = {};
-  currentStep = 0;
-  cancelConfirmMode = false;
-  renderCarousel();
-}
+function cancelConfirmDiscard() { discardSession(); }
 
 // Direct field update without re-render (keeps textarea focus)
 function setDraftField(symId, field, val) {
@@ -1840,6 +1987,23 @@ function saveAll() {
   renderSummary();
 }
 
+function summaryDiscard() {
+  const btn = document.getElementById('summary-discard-btn');
+  if (!btn) return;
+  if (btn.dataset.confirm === 'true') {
+    discardSession();
+  } else {
+    btn.dataset.confirm = 'true';
+    btn.textContent = 'Confirm discard?';
+    btn.style.background = 'var(--worse)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--worse)';
+    setTimeout(() => {
+      if (btn) { btn.dataset.confirm = ''; btn.textContent = 'Discard'; btn.style.background = ''; btn.style.color = 'var(--worse)'; btn.style.borderColor = 'var(--border)'; }
+    }, 3000);
+  }
+}
+
 function renderSummary() {
   const area   = document.getElementById('carousel-area');
   const logTop = document.getElementById('log-top');
@@ -1884,7 +2048,7 @@ function renderSummary() {
       const ps = periodShort[prev.period] || prev.period;
       const when = prev.date === currentDate ? ps
         : new Date(prev.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + ps;
-      cells += `<div class="summary-prior-when">${when}</div>
+      cells += `<div class="summary-prior-when">Prev: ${when}</div>
                 <div class="summary-badge-cell">${trendBadge(prev)}</div>
                 <div class="summary-badge-cell">${absBadge(prev)}</div>`;
     }
@@ -1897,7 +2061,14 @@ function renderSummary() {
     </div>
     <div class="summary-table">${cells}</div>
     <button onclick="document.getElementById('log-top').style.display='';currentStep=0;renderCarousel();"
-      style="margin-top:18px;width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer">Done</button>
+      style="margin-top:18px;width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer"
+      onclick="sessionSnapshot=null;sessionDirty=false;openCarousel();">Done</button>
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <button onclick="currentStep=0;document.getElementById('log-top').style.display='';renderCarousel();"
+        style="flex:1;padding:12px;border-radius:12px;background:var(--surface);color:var(--accent);border:1px solid var(--accent);font-size:14px;font-weight:700;cursor:pointer">Edit</button>
+      <button id="summary-discard-btn" onclick="summaryDiscard()"
+        style="flex:1;padding:12px;border-radius:12px;background:var(--surface);color:var(--worse);border:1px solid var(--border);font-size:14px;font-weight:700;cursor:pointer">Discard</button>
+    </div>
   </div>`;
 }
 
@@ -2016,7 +2187,7 @@ function updateTimeChips() {
 function setHistMode(mode) {
   const hasSym = !!histSymFilter;
   const isCE   = histCatFilter === 'Care Events';
-  if (!hasSym && !isCE) return;
+  if (mode === 'graph' && !hasSym && !isCE) return; // Chart still needs a symptom
   histViewMode = mode;
   updateHistViewToggle();
   renderHistoryBody();
@@ -2027,16 +2198,28 @@ function toggleHistCare()  { showCareEvents = !showCareEvents; updateHistViewTog
 function updateHistViewToggle() {
   const hasSym = !!histSymFilter;
   const isCE   = histCatFilter === 'Care Events';
-  const canView = hasSym || isCE;
   const tText  = document.getElementById('hvb-text');
   const tGraph = document.getElementById('hvb-graph');
   const tTrend = document.getElementById('hvb-trend');
   const tCare  = document.getElementById('hvb-care');
   if (!tText) return;
-  tText.className  = 'hvb' + (!canView ? ' hvb-disabled' : histViewMode === 'text'  ? ' hvb-active' : '');
-  tGraph.className = 'hvb' + (!canView || isCE ? ' hvb-disabled' : histViewMode === 'graph' ? ' hvb-active' : '');
+  // Text is always active; Chart greyed unless symptom or care events selected
+  tText.className  = 'hvb' + (histViewMode === 'text'  ? ' hvb-active' : '');
+  tGraph.className = 'hvb' + (!hasSym && !isCE ? ' hvb-disabled' : histViewMode === 'graph' ? ' hvb-active' : '');
   tTrend.className = 'hvb' + (showTrend      ? ' hvb-on' : '');
   tCare.className  = 'hvb' + (showCareEvents ? ' hvb-on' : '');
+  // Context label
+  const ctx = document.getElementById('hist-context-label');
+  if (ctx) {
+    if (histSymFilter) {
+      const sym = state.symptoms.find(s => s.id === histSymFilter);
+      if (sym) ctx.innerHTML = `<div class="hist-sym-cat">${sym.category || 'General'}</div><div class="hist-sym-header">${escapeHtml(sym.name)}</div>`;
+    } else if (histCatFilter) {
+      ctx.innerHTML = `<div class="hist-sym-cat">${histCatFilter}</div><div class="hist-sym-header">All ${histCatFilter}</div>`;
+    } else {
+      ctx.innerHTML = `<div class="hist-sym-cat">ALL</div><div class="hist-sym-header">All entries</div>`;
+    }
+  }
 }
 
 function refreshSymSelect(syncUI) {
@@ -2044,12 +2227,17 @@ function refreshSymSelect(syncUI) {
   const symSel = document.getElementById('hist-sym-select');
   if (syncUI && catSel) catSel.value = histCatFilter;
   if (!symSel) return;
-  if (!histCatFilter || histCatFilter === 'Care Events') { symSel.style.display = 'none'; return; }
+  if (!histCatFilter || histCatFilter === 'Care Events') {
+    symSel.innerHTML = '<option value="">Select a category first…</option>';
+    symSel.style.opacity = '0.4';
+    symSel.style.pointerEvents = 'none';
+    return;
+  }
   const syms = state.symptoms.filter(s => (s.category || 'General') === histCatFilter);
-  if (!syms.length) { symSel.style.display = 'none'; return; }
   symSel.innerHTML = `<option value="">All ${histCatFilter}</option>` +
     syms.map(s => `<option value="${s.id}" ${s.id === histSymFilter ? 'selected' : ''}>${s.name}</option>`).join('');
-  symSel.style.display = 'block';
+  symSel.style.opacity = '1';
+  symSel.style.pointerEvents = 'auto';
 }
 
 function renderHistory() {
@@ -2063,9 +2251,7 @@ function renderHistoryBody() {
   if (histCatFilter === 'Care Events') { renderCareEventsHistory(); return; }
   if (histSymFilter && histViewMode === 'graph') { renderTrendGraph(histSymFilter, showTrend); return; }
   if (histSymFilter) { renderFilteredHistory(histSymFilter); return; }
-  if (histViewMode === 'graph' && histCatFilter) {
-    document.getElementById('history-body').innerHTML = ''; return;
-  }
+  // No symptom selected: graph mode falls through to grouped text view
   renderGroupedHistory(histCatFilter);
 }
 
@@ -2495,12 +2681,8 @@ function renderTrendGraph(symId, showTrend) {
   if (!data) { body.innerHTML = ''; return; }
   const {sym, cat, points, calendarGrid} = data;
 
-  const header = `
-    <div class="hist-sym-header">${escapeHtml(sym.name)}</div>
-    <div class="hist-sym-cat">${sym.category || 'General'}</div>`;
-
   if (!points.length) {
-    body.innerHTML = header + `<div style="padding:30px 0;text-align:center;color:var(--subtext);font-size:14px">No plottable data yet — add some absolute values first.</div>`;
+    body.innerHTML = `<div style="padding:30px 0;text-align:center;color:var(--subtext);font-size:14px">No plottable data yet — add some absolute values first.</div>`;
     return;
   }
 
@@ -2631,9 +2813,7 @@ function renderTrendGraph(symId, showTrend) {
   body.innerHTML =
     `<div class="graph-header-row">
       <div>
-        <div class="hist-sym-header">${escapeHtml(sym.name)}</div>
-        <div class="hist-sym-cat">${sym.category || 'General'}</div>
-        <div class="hist-sym-cat" style="margin-top:-4px">${realCount} data point${realCount!==1?'s':''}</div>
+        <div class="hist-sym-cat">${realCount} data point${realCount!==1?'s':''}</div>
       </div>
       <div class="graph-legend">
         <div class="graph-legend-item">
@@ -2748,8 +2928,23 @@ function prRenderSymptomEntryRow(e) {
 const PR_PERIOD_ORDER = {day:0, evening:1, afternoon:2, morning:3};
 
 // Mirrors the on-screen All/Category timeline: Date → Period subheader → grid-aligned entry rows
-function buildPrintGroupedBody(entries, groupByCategory) {
-  if (!entries.length) return `<div class="pr-empty">No entries in this range.</div>`;
+function buildPrintGroupedBody(entries, groupByCategory, careEvents) {
+  if (!entries.length && (!careEvents || !careEvents.length)) return `<div class="pr-empty">No entries in this range.</div>`;
+
+  let careHtml = '';
+  if (careEvents && careEvents.length) {
+    const byDate = {};
+    careEvents.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+    careHtml = `<div class="pr-cat-title">Care Events</div>` +
+      Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
+        const d = new Date(date + 'T12:00:00');
+        const dateStr = d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+        const rows = byDate[date].map(e =>
+          `<div class="pr-entry-row"><span class="pr-sym-name">${escapeHtml(e.typeName)}</span><span class="pr-cat-label">${e.category}</span>${e.notes ? `<span class="pr-notes">${escapeHtml(e.notes)}</span>` : ''}</div>`
+        ).join('');
+        return `<div class="pr-date">${dateStr}</div>${rows}`;
+      }).join('');
+  }
 
   function dateGroupsHtml(entryList) {
     const byDate = {};
@@ -2769,13 +2964,14 @@ function buildPrintGroupedBody(entries, groupByCategory) {
     }).join('');
   }
 
-  if (!groupByCategory) return dateGroupsHtml(entries);
+  if (!entries.length) return careHtml;
+  if (!groupByCategory) return dateGroupsHtml(entries) + careHtml;
 
   return CATEGORIES.map(cat => {
     const catEntries = entries.filter(e => (e.category || 'General') === cat);
     if (!catEntries.length) return '';
     return `<div class="pr-cat-title">${cat}</div>${dateGroupsHtml(catEntries)}`;
-  }).filter(Boolean).join('');
+  }).filter(Boolean).join('') + careHtml;
 }
 
 // Flat chronological list for the single-symptom List-mode scope
@@ -2921,25 +3117,43 @@ function getPrintAllFilteredEntries(entries) {
   return entries.filter(e => (e.savedAt || new Date(e.date + 'T12:00:00').getTime()) >= cutoff);
 }
 
-function triggerPrintAll(format) {
+function setPrintAllMode(mode) {
+  printAllMode = mode;
+  const tText  = document.getElementById('pa-hvb-text');
+  const tGraph = document.getElementById('pa-hvb-graph');
+  if (tText)  tText.className  = 'hvb' + (mode === 'text'  ? ' hvb-active' : '');
+  if (tGraph) tGraph.className = 'hvb' + (mode === 'graph' ? ' hvb-active' : '');
+}
+
+function togglePrintAllTrend() {
+  printAllTrend = !printAllTrend;
+  const btn = document.getElementById('pa-hvb-trend');
+  if (btn) btn.className = 'hvb' + (printAllTrend ? ' hvb-on' : '');
+}
+
+function togglePrintAllCare() {
+  printAllCare = !printAllCare;
+  const btn = document.getElementById('pa-hvb-care');
+  if (btn) btn.className = 'hvb' + (printAllCare ? ' hvb-on' : '');
+}
+
+function triggerPrintAll() {
   const container = document.getElementById('print-report');
   const profileName = getActiveProfile() ? getActiveProfile().name : '';
   const timeLabel = printAllTimeFilter === 'all' ? 'All time'
     : printAllTimeFilter === '7d' ? 'Last 7 days'
     : printAllTimeFilter === '30d' ? 'Last 30 days' : 'Last 90 days';
   const generatedStr = new Date().toLocaleString('en-US', {dateStyle:'medium', timeStyle:'short'});
-  const formatLabel = format === 'text' ? 'All entries — List'
-    : format === 'graphs' ? 'All symptoms — Chart'
-    : 'All symptoms — Chart + Trend';
-  const showTrend = format === 'graphs-trend';
+  const formatLabel = printAllMode === 'text' ? 'All entries — List' : 'All symptoms — Chart';
 
   let bodyHtml = '';
-  if (format === 'text') {
+  if (printAllMode === 'text') {
     const entries = getPrintAllFilteredEntries(state.entries);
-    bodyHtml = buildPrintGroupedBody(entries, true);
+    const careEvents = printAllCare ? getPrintAllFilteredEntries(state.careEvents) : [];
+    bodyHtml = buildPrintGroupedBody(entries, true, careEvents);
   } else {
     bodyHtml = state.symptoms.map(sym => {
-      const svgHtml = buildPrintGraphSVG(sym.id, showTrend);
+      const svgHtml = buildPrintGraphSVG(sym.id, printAllTrend);
       return `<div class="pr-cat-title" style="margin-top:24px">${escapeHtml(sym.name)} <span style="font-weight:400;font-size:12px;color:#555">— ${sym.category || 'General'}</span></div>
         <div class="pr-graph-wrap">${svgHtml}</div>`;
     }).join('');
@@ -2958,6 +3172,7 @@ function triggerPrintAll(format) {
 function initPrintAllChips() {
   document.querySelectorAll('#print-all-chips .time-chip').forEach(btn => {
     btn.addEventListener('click', function() {
+      if (this.dataset.range === 'custom') return;
       printAllTimeFilter = this.dataset.range;
       document.querySelectorAll('#print-all-chips .time-chip').forEach(b =>
         b.classList.toggle('time-chip-active', b === this));
@@ -2978,14 +3193,12 @@ function renderFilteredHistory(symId) {
     .sort((a,b) => (b.savedAt||0) - (a.savedAt||0) || b.date.localeCompare(a.date));
   const timeLabel = histTimeFilter === 'all' ? '' : ' in the last ' + (histTimeFilter === '7d' ? '7 days' : histTimeFilter === '30d' ? '30 days' : '90 days');
   if (!entries.length) {
-    body.innerHTML = `<div class="hist-sym-header">${escapeHtml(sym.name)}</div><div class="hist-sym-cat">${sym.category||'General'}</div><div style="padding:20px 0;text-align:center;color:var(--subtext);font-size:14px">No entries${timeLabel}. ${histTimeFilter !== 'all' ? 'Try a longer range.' : ''}</div>`;
+    body.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--subtext);font-size:14px">No entries${timeLabel}. ${histTimeFilter !== 'all' ? 'Try a longer range.' : ''}</div>`;
     return;
   }
   const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
 
   body.innerHTML = `
-    <div class="hist-sym-header">${escapeHtml(sym.name)}</div>
-    <div class="hist-sym-cat">${sym.category || 'General'}</div>
     ${entries.map(e => `
       <div class="hist-entry tappable" data-entry-id="${e.id}">
         <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}${e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${periodName[e.period] || e.period}</span>` : ''}</div>
@@ -3082,7 +3295,7 @@ function selectCECat(cat) {
   const inp = document.getElementById('new-ce-type');
   if (inp) {
     const placeholders = {
-      'Medical visits':  'Doctor, specialist, ER, telemedicine…',
+      'Visits':          'Doctor, specialist, ER, telemedicine…',
       'Procedures':      'Surgery, biopsy, infusion, imaging…',
       'Therapy':         'Physical therapy, rehab, occupational…',
       'Diagnostics':     'Lab work, blood test, scan, MRI…',
@@ -3216,96 +3429,90 @@ function shiftEventDate(n) {
   updateEventDateLabel();
 }
 
-function renderEventTypeSelect() {
-  const sel = document.getElementById('event-type-select');
-  if (!sel) return;
-  const prev = sel.value;
-  const byCat = CE_CATS.map(cat => ({
-    cat, types: state.careEventTypes.filter(t => (t.category || CE_CATS[0]) === cat)
-  })).filter(g => g.types.length);
-  sel.innerHTML = '<option value="">Select event type…</option>' +
-    byCat.map(({cat, types}) =>
-      `<optgroup label="${cat}">${types.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}</optgroup>`
-    ).join('');
-  if (prev) sel.value = prev;
-  syncEventLogBtn();
+function goEventToday() {
+  currentEventDate = todayStr();
+  updateEventDateLabel();
 }
 
-function syncEventLogBtn() {
-  const btn = document.getElementById('event-log-btn');
-  const sel = document.getElementById('event-type-select');
-  if (btn && sel) btn.classList.toggle('ready', !!sel.value);
+function selectEventCat(cat) {
+  selectedEventCat = cat;
+  selectedCETypeId = null;
+  renderEventTypePicker();
 }
+
+function selectEventType(id) {
+  selectedCETypeId = (selectedCETypeId === id) ? null : id;
+  renderEventTypePicker();
+  if (selectedCETypeId) setTimeout(() => { const ta = document.getElementById('event-notes'); if (ta) ta.focus(); }, 80);
+}
+
+function cancelEventTypeSelection() {
+  selectedCETypeId = null;
+  renderEventTypePicker();
+}
+
+function renderEventTypePicker() {
+  const el = document.getElementById('event-picker-area');
+  if (!el) return;
+
+  const catPills = CE_CATS.map(cat =>
+    `<button class="ce-cat-btn ${selectedEventCat === cat ? 'active' : ''}" onclick="selectEventCat('${cat}')">${CE_ICON[cat]||''} ${cat}</button>`
+  ).join('');
+
+  let typeSection = '';
+  if (selectedEventCat) {
+    const types = state.careEventTypes.filter(t => (t.category || CE_CATS[0]) === selectedEventCat);
+    const typePills = types.length
+      ? `<div class="event-type-pills">${types.map(t =>
+          `<button class="event-type-pill ${selectedCETypeId === t.id ? 'selected' : ''}" onclick="selectEventType('${t.id}')">${escapeHtml(t.name)}</button>`
+        ).join('')}</div>`
+      : `<div style="color:var(--subtext);font-size:13px;padding:8px 2px">No event types in this category yet — add them in Setup.</div>`;
+    typeSection = `<div class="choice-label" style="margin-top:18px">Care Event Type</div>${typePills}`;
+  }
+
+  let actionSection = '';
+  if (selectedCETypeId) {
+    actionSection = `
+      <div class="choice-label" style="margin-top:18px">Notes</div>
+      <textarea class="event-notes-input" id="event-notes" placeholder="Notes (optional)…"></textarea>
+      <div class="carousel-footer">
+        <button class="cf-btn cf-next" onclick="logCareEvent()">Log Event</button>
+        <button class="cf-btn cf-cancel" onclick="cancelEventTypeSelection()">✕</button>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="choice-label">Category</div>
+    <div class="ce-cat-selector">${catPills}</div>
+    ${typeSection}${actionSection}`;
+}
+
+function renderEventTypeSelect() { renderEventTypePicker(); }
+function syncEventLogBtn() {}
 
 function logCareEvent() {
-  const sel   = document.getElementById('event-type-select');
-  const notes = document.getElementById('event-notes');
-  if (!sel || !sel.value) return;
-  const cet = state.careEventTypes.find(t => t.id === sel.value);
+  if (!selectedCETypeId) return;
+  const cet = state.careEventTypes.find(t => t.id === selectedCETypeId);
   if (!cet) return;
+  const notes = document.getElementById('event-notes');
   state.careEvents.push({
-    id: Date.now() + Math.random(),
-    savedAt: Date.now(),
-    date: currentEventDate,
-    typeId: cet.id,
-    typeName: cet.name,
-    category: cet.category,
-    notes: (notes ? notes.value.trim() : '') || null
+    id: Date.now()+Math.random(), savedAt: Date.now(),
+    date: currentEventDate, typeId: cet.id, typeName: cet.name,
+    category: cet.category, notes: (notes ? notes.value.trim() : '') || null
   });
   persist();
-  if (notes) notes.value = '';
-  sel.value = '';
-  syncEventLogBtn();
-  renderCareEventsList();
-}
-
-function deleteCareEvent(id) {
-  if (armedCEDeleteId !== id) {
-    clearTimeout(armedCEDeleteTimer);
-    armedCEDeleteId = id;
-    armedCEDeleteTimer = setTimeout(() => { armedCEDeleteId = null; renderCareEventsList(); }, 3000);
-    renderCareEventsList();
-    return;
-  }
-  clearTimeout(armedCEDeleteTimer);
-  armedCEDeleteId = null;
-  state.careEvents = state.careEvents.filter(e => String(e.id) !== String(id));
-  persist();
-  renderCareEventsList();
-}
-
-function renderCareEventsList() {
-  const list = document.getElementById('care-events-list');
-  if (!list) return;
-  const sorted = [...state.careEvents].sort((a,b) => b.date.localeCompare(a.date) || b.savedAt - a.savedAt);
-  if (!sorted.length) {
-    list.innerHTML = '<div style="color:var(--subtext);font-size:14px">No events logged yet.</div>';
-    return;
-  }
-  let lastDate = '';
-  list.innerHTML = sorted.map(e => {
-    const dateHeader = e.date !== lastDate
-      ? `<div class="ce-date-header">${e.date === todayStr() ? 'Today' : new Date(e.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</div>`
-      : '';
-    lastDate = e.date;
-    const icon = CE_ICON[e.category] || '';
-    return `${dateHeader}<div class="ce-list-row">
-      <span class="ce-list-icon">${icon}</span>
-      <div class="ce-list-body">
-        <div class="ce-list-name">${escapeHtml(e.typeName)}</div>
-        ${e.notes ? `<div class="ce-list-notes">${escapeHtml(e.notes)}</div>` : ''}
-      </div>
-      <button class="profile-action-btn profile-del-btn ce-list-del ${armedCEDeleteId==e.id?'armed':''}" onclick="deleteCareEvent('${e.id}')">${armedCEDeleteId==e.id?'Confirm?':TRASH_ICON}</button>
-    </div>`;
-  }).join('');
+  selectedCETypeId = null;
+  renderEventTypePicker();
 }
 
 function renderEventsScreen() {
   currentEventDate = todayStr();
+  selectedEventCat = null;
+  selectedCETypeId = null;
   updateEventDateLabel();
-  renderEventTypeSelect();
-  renderCareEventsList();
+  renderEventTypePicker();
 }
+
 
 function renderSymptoms() {
   const list = document.getElementById('sym-list');
@@ -3487,18 +3694,19 @@ function importCSV(ev) {
     try {
       const rows = parseImportRows(e.target.result);
       if (!rows.length) { toast('No valid rows found'); return; }
-      if (state.entries.length > 0 || state.careEvents.length > 0) {
-        pendingImportRows = rows;
-        const warn = document.getElementById('import-warning');
-        const msg  = document.getElementById('import-warning-msg');
-        if (warn && msg) {
-          const symRows = rows.filter(r => r._type !== 'care_event').length;
-          const ceRows  = rows.filter(r => r._type === 'care_event').length;
-          msg.textContent = `This profile already has ${state.entries.length} entries and ${state.careEvents.length} care events. The CSV contains ${symRows} symptom rows and ${ceRows} care event rows.`;
-          warn.style.display = 'block';
-        }
-      } else {
-        applyImportRows(rows, false);
+      pendingImportRows = rows;
+      const warn = document.getElementById('import-warning');
+      const msg  = document.getElementById('import-warning-msg');
+      if (warn && msg) {
+        const profileName = getActiveProfile() ? getActiveProfile().name : 'this profile';
+        const symRows = rows.filter(r => r._type !== 'care_event').length;
+        const ceRows  = rows.filter(r => r._type === 'care_event').length;
+        const hasData = state.entries.length > 0 || state.careEvents.length > 0;
+        const existingDesc = hasData
+          ? `"${profileName}" already has ${state.entries.length} entries and ${state.careEvents.length} care events.`
+          : `"${profileName}" is currently empty.`;
+        msg.textContent = `${existingDesc} The CSV contains ${symRows} symptom rows and ${ceRows} care event rows.`;
+        warn.style.display = 'block';
       }
     } catch (err) { toast('Import failed: ' + err.message); }
   };
@@ -3556,7 +3764,7 @@ currentEventDate = todayStr();      // now safe — constants are defined
 initProfiles();
 loadActiveProfileData();
 updateDateLabel();
-renderCarousel();
+openCarousel();
 renderSymptoms();
 renderCETypes();
 renderEventTypeSelect();
