@@ -356,23 +356,14 @@ nav {
 
 /* ── Occurrences: time display + hidden input + notes ── */
 .time-wrap { position: relative; }
-.time-display {
+.occ-time-input {
   width: 100%; padding: 14px 16px; border-radius: 12px;
   border: 2px solid var(--border); background: var(--surface);
-  color: var(--subtext); font-size: 22px; font-weight: 700;
-  text-align: center; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  min-height: 54px; user-select: none;
-}
-.time-display.time-is-set { color: var(--text); border-color: var(--accent); }
-.time-input {
-  width: 100%; padding: 14px 16px; border-radius: 12px;
-  border: 2px solid var(--accent); background: var(--surface);
   color: var(--text); font-size: 22px; font-weight: 700;
   -webkit-appearance: none; appearance: none;
-  text-align: center; cursor: pointer; display: block;
+  text-align: center; cursor: pointer; display: block; box-sizing: border-box;
 }
-.time-input:focus { outline: none; }
+.occ-time-input:focus { outline: none; border-color: var(--accent); }
 .notes-input {
   width: 100%; padding: 12px 14px; border-radius: 12px;
   border: 2px solid var(--border); background: var(--surface);
@@ -690,19 +681,14 @@ nav {
 .profile-add-btn:active { border-color: var(--accent); color: var(--accent); }
 
 /* ── Post-save summary ── */
-.summary-header { margin-bottom: 16px; }
-.summary-saved { font-size: 18px; font-weight: 800; color: var(--better); letter-spacing: -0.3px; }
-.summary-when  { font-size: 13px; color: var(--subtext); margin-top: 2px; }
-.summary-row {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px;
-}
-.summary-row:last-child { border-bottom: none; }
-.summary-sym   { flex: 1; font-weight: 600; color: var(--text); padding-top: 2px; }
-.summary-now   { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
-.summary-prior { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; min-width: 90px; }
-.summary-prior-badges { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
-.summary-prior-when { font-size: 11px; color: var(--subtext); text-align: right; }
+.summary-header  { margin-bottom: 14px; }
+.summary-saved   { font-size: 18px; font-weight: 800; color: var(--better); letter-spacing: -0.3px; }
+.summary-when    { font-size: 13px; color: var(--subtext); margin-top: 2px; }
+.summary-table   { display: grid; grid-template-columns: 1fr auto auto; column-gap: 10px; row-gap: 4px; align-items: center; margin: 4px 0 6px; }
+.summary-sym     { font-weight: 700; color: var(--text); font-size: 14px; }
+.summary-prior-when { font-size: 12px; color: var(--subtext); padding-left: 12px; white-space: nowrap; }
+.summary-badge-cell { display: flex; justify-content: flex-end; }
+.summary-spacer  { grid-column: 1 / -1; height: 6px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
 #toast {
   position: fixed; bottom: calc(var(--nav-h) + 14px); left: 50%;
   transform: translateX(-50%) translateY(10px);
@@ -751,7 +737,7 @@ nav {
 #print-report .pr-badge {
   display: inline-block; font-size: 10.5px; font-weight: 700;
   padding: 1px 7px; border-radius: 10px; border: 1.3px solid currentColor;
-  white-space: nowrap;
+  white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px;
 }
 #print-report .pr-notes { width: 100%; font-size: 11.5px; font-style: italic; color: #555; margin-top: 1px; }
 #print-report .pr-empty { font-size: 13px; color: #777; padding: 20px 0; }
@@ -874,7 +860,7 @@ nav {
       <div class="ce-cat-selector" id="ce-cat-selector"></div>
       <div class="sym-input-row">
         <input class="sym-input" id="new-ce-type" type="text"
-          placeholder="e.g. Chemotherapy infusion…"
+          placeholder="Doctor, specialist, ER, telemedicine…"
           onkeydown="if(event.key==='Enter')addCEType()" oninput="syncCEAddBtn()">
         <button class="sym-add-btn" id="ce-add-btn" onclick="addCEType()">+</button>
       </div>
@@ -959,14 +945,18 @@ nav {
     <button class="nav-item active" data-screen="log" onclick="switchScreen('log')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Log
     </button>
+    <button class="nav-item" data-screen="events" onclick="switchScreen('events')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 L20 6 L20 12 C20 17 16 21 12 22 C8 21 4 17 4 12 L4 6 Z"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>Care
+    </button>
     <button class="nav-item" data-screen="history" onclick="switchScreen('history')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>History
     </button>
     <button class="nav-item" data-screen="symptoms" onclick="switchScreen('symptoms')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Setup
-    </button>
-    <button class="nav-item" data-screen="events" onclick="switchScreen('events')">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Events
     </button>
     <button class="nav-item" data-screen="export" onclick="switchScreen('export')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>Data
@@ -999,9 +989,9 @@ const CE_CATS    = ['Medical visits','Procedures','Therapy','Diagnostics','Medic
 const CE_ICON = {
   'Medical visits': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
   'Procedures':     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
-  'Therapy':        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+  'Therapy':        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
   'Diagnostics':    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-  'Medication':     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+  'Medication':     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45,12,12)"><path d="M12 8 L16 8 A4 4 0 0 1 16 16 L12 16 Z" fill="currentColor" stroke="none"/><rect x="4" y="8" width="16" height="8" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/></g></svg>`,
   'Milestones':     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`
 };
 
@@ -1505,14 +1495,8 @@ function renderCarousel() {
     } else if (addActive) {
       // One card per occurrence entry
       const cards = entries.map((entry, i) => {
-        const tDisplay = entry.time
-          ? `<div class="time-display time-is-set" onclick="activateOccTime('${sym.id}',${i})">${fmtTime(entry.time)}</div>
-             <input type="time" id="occ-ti-${sym.id}-${i}" data-symid="${sym.id}" data-idx="${i}"
-               class="time-input" value="${entry.time}" style="display:none"
-               onchange="handleOccTimeSelect(this)">`
-          : `<div class="time-display" onclick="activateOccTime('${sym.id}',${i})">None</div>
-             <input type="time" id="occ-ti-${sym.id}-${i}" data-symid="${sym.id}" data-idx="${i}"
-               class="time-input" style="display:none"
+        const tDisplay = `<input type="time" id="occ-ti-${sym.id}-${i}" data-symid="${sym.id}" data-idx="${i}"
+               class="occ-time-input" value="${entry.time || ''}"
                onchange="handleOccTimeSelect(this)">`;
         return `
           <div class="occ-entry-card">
@@ -1778,27 +1762,11 @@ function removeOccEntry(symId, idx) {
   if (!draft[symId].entries.length) draft[symId].mode = null;
   renderCarousel();
 }
-function activateOccTime(symId, idx) {
-  const input = document.getElementById(`occ-ti-${symId}-${idx}`);
-  if (!input) return;
-  input.style.display = 'block';
-  input.focus();
-  try { input.showPicker(); } catch(e) {}
-}
 function handleOccTimeSelect(el) {
   const symId = el.dataset.symid;
   const idx   = parseInt(el.dataset.idx);
   if (!draft[symId] || !draft[symId].entries) return;
-  const val = el.value || '';
-  draft[symId].entries[idx].time = val;
-  // Update the display div in-place — calling renderCarousel() here destroys
-  // the input element which dismisses the iOS native time picker prematurely
-  const display = el.previousElementSibling;
-  if (display) {
-    display.textContent = val ? fmtTime(val) : 'None';
-    display.classList.toggle('time-is-set', !!val);
-  }
-  el.style.display = 'none';
+  draft[symId].entries[idx].time = el.value || '';
 }
 function setOccEntryNote(symId, idx, val) {
   if (!draft[symId] || !draft[symId].entries) return;
@@ -1873,69 +1841,64 @@ function saveAll() {
 }
 
 function renderSummary() {
-  const area = document.getElementById('carousel-area');
+  const area   = document.getElementById('carousel-area');
+  const logTop = document.getElementById('log-top');
   if (!area) return;
+  if (logTop) logTop.style.display = 'none';
 
   const periodShort = {day:'All day', morning:'Morn', afternoon:'Aft', evening:'Eve'};
   const periodLabel = periodShort[currentPeriod] || currentPeriod;
   const d = new Date(currentDate + 'T12:00:00');
   const dateLabel = d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
-
   const savedEntries = state.entries.filter(e => e.date === currentDate && e.period === currentPeriod);
 
-  function badgesFor(e) {
+  function trendBadge(e) {
+    if (!e || !e.relative) return '';
+    return `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>`;
+  }
+  function absBadge(e) {
     if (!e) return '';
     if (e.category === 'Occurrences') {
       if (e.occMode === 'none') return `<span class="badge b-none">none</span>`;
-      if (e.time) return `<span class="badge b-none">${fmtTime(e.time)}</span>`;
-      return '';
+      return e.time ? `<span class="badge b-none">${fmtTime(e.time)}</span>` : '';
     }
-    let b = '';
-    if (e.relative) b += `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>`;
-    if (e.absolute) b += `<span class="badge b-${e.absolute}">${FACE_LABEL[e.absolute]||e.absolute}</span>`;
-    return b;
+    if (!e.absolute) return '';
+    return `<span class="badge b-${e.absolute}">${FACE_LABEL[e.absolute]||e.absolute}</span>`;
   }
 
-  const rows = state.symptoms.map(sym => {
+  let cells = '';
+  let first = true;
+  state.symptoms.forEach(sym => {
     const symEntries = savedEntries.filter(e => e.symptomId === sym.id);
-    if (!symEntries.length) return '';
-
-    // Current — one row per occurrence entry, single row for others
-    const nowBadges = symEntries.map(e => `<div>${badgesFor(e)}</div>`).join('');
-
-    // Prior
+    if (!symEntries.length) return;
+    const now = symEntries[0];
     const prev = getPrev(sym.id);
-    let priorWhen = '', priorBadges = '';
+    if (!first) cells += `<div class="summary-spacer"></div>`;
+    first = false;
+    // Now row
+    cells += `<div class="summary-sym">${escapeHtml(sym.name)}</div>
+              <div class="summary-badge-cell">${trendBadge(now)}</div>
+              <div class="summary-badge-cell">${absBadge(now)}</div>`;
+    // Prior row — only if prior exists
     if (prev) {
       const ps = periodShort[prev.period] || prev.period;
-      if (prev.date === currentDate) {
-        priorWhen = ps;
-      } else {
-        const pd = new Date(prev.date + 'T12:00:00');
-        priorWhen = pd.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + ps;
-      }
-      priorBadges = `<div class="summary-prior-badges">${badgesFor(prev)}</div>`;
-    } else {
-      priorWhen = 'First entry';
+      const when = prev.date === currentDate ? ps
+        : new Date(prev.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + ps;
+      cells += `<div class="summary-prior-when">${when}</div>
+                <div class="summary-badge-cell">${trendBadge(prev)}</div>
+                <div class="summary-badge-cell">${absBadge(prev)}</div>`;
     }
+  });
 
-    return `<div class="summary-row">
-      <span class="summary-sym">${escapeHtml(sym.name)}</span>
-      <span class="summary-now">${nowBadges}</span>
-      <span class="summary-prior">
-        <span class="summary-prior-when">${priorWhen}</span>
-        ${priorBadges}
-      </span>
-    </div>`;
-  }).filter(Boolean).join('');
-
-  area.innerHTML = `
+  area.innerHTML = `<div style="padding:16px 0">
     <div class="summary-header">
-      <div class="summary-saved">Saved ✓</div>
-      <div class="summary-when">${dateLabel} · ${periodLabel}</div>
+      <div class="summary-saved">Saved \u2713</div>
+      <div class="summary-when">${dateLabel} \u00b7 ${periodLabel}</div>
     </div>
-    ${rows || '<div style="color:var(--subtext);font-size:14px">Nothing logged this period.</div>'}
-    <button class="cf-btn cf-save" onclick="currentStep=0;renderCarousel()" style="margin-top:18px;width:100%">Done</button>`;
+    <div class="summary-table">${cells}</div>
+    <button onclick="document.getElementById('log-top').style.display='';currentStep=0;renderCarousel();"
+      style="margin-top:18px;width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer">Done</button>
+  </div>`;
 }
 
 // ══ Single-entry edit / delete ══
@@ -3117,7 +3080,18 @@ function selectCECat(cat) {
   document.querySelectorAll('.ce-cat-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.cecat === cat));
   const inp = document.getElementById('new-ce-type');
-  if (inp) inp.focus();
+  if (inp) {
+    const placeholders = {
+      'Medical visits':  'Doctor, specialist, ER, telemedicine…',
+      'Procedures':      'Surgery, biopsy, infusion, imaging…',
+      'Therapy':         'Physical therapy, rehab, occupational…',
+      'Diagnostics':     'Lab work, blood test, scan, MRI…',
+      'Medication':      'New prescription, dosage change, stopped…',
+      'Milestones':      'Diagnosis, remission, discharge…'
+    };
+    inp.placeholder = placeholders[cat] || 'Enter event name…';
+    inp.focus();
+  }
   syncCEAddBtn();
 }
 
