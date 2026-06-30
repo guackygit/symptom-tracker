@@ -942,14 +942,6 @@ nav {
       <span class="profile-label" id="profile-label-symptoms"></span>
     </div>
     <div class="exp-card">
-      <div class="exp-card-title">Appearance</div>
-      <div class="cat-selector">
-        <button class="cat-btn active" data-theme-btn="dark"   onclick="setTheme('dark')">Dark</button>
-        <button class="cat-btn"        data-theme-btn="system" onclick="setTheme('system')">System</button>
-        <button class="cat-btn"        data-theme-btn="light"  onclick="setTheme('light')">Light</button>
-      </div>
-    </div>
-    <div class="exp-card">
       <div class="exp-card-title">Profiles</div>
       <div class="exp-card-body">Switch between independent sets of symptoms and history — e.g. separate profiles for yourself and someone else, or for testing.</div>
       <div id="profiles-list"></div>
@@ -982,6 +974,21 @@ nav {
         <button class="sym-add-btn" id="ce-add-btn" onclick="addCEType()">+</button>
       </div>
       <div id="ce-type-list" style="margin-top:14px"></div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-card-title">Appearance</div>
+      <div class="cat-selector">
+        <button class="cat-btn active" data-theme-btn="dark"   onclick="setTheme('dark')">Dark</button>
+        <button class="cat-btn"        data-theme-btn="system" onclick="setTheme('system')">System</button>
+        <button class="cat-btn"        data-theme-btn="light"  onclick="setTheme('light')">Light</button>
+      </div>
+    </div>
+    <div class="exp-card">
+      <div class="exp-card-title">About</div>
+      <div class="exp-card-body" style="display:flex;flex-direction:column;gap:4px">
+        <div>Version <span id="about-version" style="color:var(--text);font-weight:600"></span></div>
+        <div>Built <span id="about-build-date" style="color:var(--text);font-weight:600"></span></div>
+      </div>
     </div>
   </div>
 
@@ -1070,11 +1077,11 @@ nav {
     <button class="nav-item" data-screen="history" onclick="switchScreen('history')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>History
     </button>
-    <button class="nav-item" data-screen="symptoms" onclick="switchScreen('symptoms')">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Setup
-    </button>
     <button class="nav-item" data-screen="export" onclick="switchScreen('export')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>Data
+    </button>
+    <button class="nav-item" data-screen="symptoms" onclick="switchScreen('symptoms')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Setup
     </button>
   </nav>
 </div>
@@ -1123,6 +1130,10 @@ let state = { symptoms: [], entries: [], careEventTypes: [], careEvents: [] };
 let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
+// ══ Version info — update both on every deploy ══
+const APP_VERSION = 'v32';
+const APP_BUILD_DATE = '2026-06-30T16:30:00-05:00'; // ISO 8601, local time of build
+
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
 function applyTheme() {
@@ -1670,6 +1681,7 @@ function doSwitchScreen(name) {
   if (name === 'history') { histTimeFilter = 'all'; renderHistory(); }
   if (name === 'symptoms') renderSymptoms();
   if (name === 'events')   renderEventsScreen();
+  if (name === 'export')   { printAllTimeFilter = 'all'; renderPrintAllTimeChips(); }
 }
 
 // ══ Carousel ══
@@ -2424,14 +2436,14 @@ function renderEntryRow(e) {
     <div class="tl-sym-row" style="display:block">
       <div class="tl-row-grid">
         <span class="tl-sym-name">${escapeHtml(e.symptomName)}</span>
-        <span class="tl-badge-col">${e.relative ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
+        <span class="tl-badge-col">${(showTrend && e.relative) ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
         <span class="tl-badge-col">${e.absolute ? `<span class="badge b-${e.absolute}">${absLabel}</span>` : ''}</span>
       </div>
       ${e.notes ? `<div class="tl-occ-notes">${escapeHtml(e.notes)}</div>` : ''}
     </div>`;
 }
 
-// Renders date→period timeline groups for a flat list of entries
+// Renders date→period timeline groups for a flat list of entries (single category)
 function renderTimeline(entries) {
   const periodOrder = {day:0, evening:1, afternoon:2, morning:3};
   const periodName  = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
@@ -2441,11 +2453,23 @@ function renderTimeline(entries) {
     if (!byDate[e.date][e.period]) byDate[e.date][e.period] = [];
     byDate[e.date][e.period].push(e);
   });
-  return Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
+  const careByDate = {};
+  if (showCareEvents) {
+    getTimeFilteredEntries(state.careEvents).forEach(e => {
+      (careByDate[e.date] = careByDate[e.date] || []).push(e);
+    });
+  }
+  const allDates = [...new Set([...Object.keys(byDate), ...Object.keys(careByDate)])];
+  return allDates.sort((a,b) => b.localeCompare(a)).map(date => {
     const d = new Date(date + 'T12:00:00');
     const dateStr = date === todayStr() ? 'Today'
       : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
-    const periods = Object.keys(byDate[date]).sort((a,b) => (periodOrder[a]||0)-(periodOrder[b]||0));
+
+    const careForDate = (careByDate[date] || []).map(e =>
+      `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
+    ).join('');
+
+    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (periodOrder[a]||0)-(periodOrder[b]||0));
     const periodsHtml = periods.map((p, pi) => {
       const items = byDate[date][p];
       const dotColor = items.some(e=>e.relative==='worse'||e.relative==='much-worse') ? 'var(--worse)'
@@ -2463,7 +2487,7 @@ function renderTimeline(entries) {
           </div>
         </div>`;
     }).join('');
-    return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${periodsHtml}</div>`;
+    return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${careForDate}${periodsHtml}</div>`;
   }).join('');
 }
 
@@ -2651,21 +2675,22 @@ function computeAxisTicks(startDate, endDate) {
   return [...new Set(ticks)].filter(t => dayIndex(startDate,t) >= 0 && dayIndex(t,endDate) >= 0);
 }
 
-function getChartData(symId) {
+function getChartData(symId, filterFn) {
+  filterFn = filterFn || getTimeFilteredEntries;
   const sym = state.symptoms.find(s => s.id === symId);
   if (!sym) return null;
   const cat = sym.category || 'General';
 
   if (cat === 'Occurrences') {
     // Unchanged — scatter only, no line, no missing-slot inference, no calendar-grid spacing
-    const points = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId))
+    const points = filterFn(state.entries.filter(e => e.symptomId === symId))
       .map(e => ({ts: getPlotTs(e), y: e.occMode === 'none' ? 0 : 1, id: e.id, period: e.period, relative: null, missing: false}))
       .sort((a, b) => a.ts - b.ts);
     return {sym, cat, points, calendarGrid: false};
   }
 
   // General / Symptoms: reconcile all-day vs intraday entries per date, infer missing slots
-  const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId));
+  const entries = filterFn(state.entries.filter(e => e.symptomId === symId));
   const byDate = {};
   entries.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
   const dates = Object.keys(byDate).sort();
@@ -2999,7 +3024,7 @@ function renderTrendGraph(symId, showTrend) {
   }
 
   // General / Symptoms — constant-density calendar grid, pinned Y-axis, horizontal scroll
-  const MIN_DAY_W = 40, padL = 20, padR = 20, mlFixed = 52;
+  const MIN_DAY_W = 50, padL = 20, padR = 20, mlFixed = 52;
   const rangeStart = points[0].date, rangeEnd = points[points.length - 1].date;
   const numDays = dayIndex(rangeStart, rangeEnd) + 1;
   const availW = (window.innerWidth || 360) - mlFixed - padL - padR;
@@ -3376,8 +3401,8 @@ function buildPrintSymptomListBody(entries) {
   return sorted.map(prRenderSymptomEntryRow).join('');
 }
 
-function buildPrintGraphSVG(symId, showTrend) {
-  const data = getChartData(symId);
+function buildPrintGraphSVG(symId, showTrend, filterFn) {
+  const data = getChartData(symId, filterFn);
   if (!data || !data.points.length) return `<div class="pr-empty">No plottable data yet.</div>`;
   const {cat, points, calendarGrid} = data;
 
@@ -3480,16 +3505,29 @@ function buildPrintGraphSVG(symId, showTrend) {
   </svg>`;
 }
 
-function buildPrintReport() {
+// ── Shared print sink ──
+function renderPrintDoc(bodyHtml, scopeLabel, timeLabel) {
   const container = document.getElementById('print-report');
   const profileName = getActiveProfile() ? getActiveProfile().name : '';
   const generatedStr = new Date().toLocaleString('en-US', {dateStyle:'medium', timeStyle:'short'});
+  container.innerHTML = `
+    <h1>Symptom Tracking Summary</h1>
+    <div class="pr-meta">Profile: ${escapeHtml(profileName)}</div>
+    <div class="pr-scope">${escapeHtml(scopeLabel)} · ${escapeHtml(timeLabel)}</div>
+    ${bodyHtml}
+    <div class="pr-footer">Generated ${generatedStr}</div>`;
+  window.print();
+}
 
+// ── History tab print ──
+function triggerPrint() {
+  const timeLabel = getPrintTimeLabel();
+  const scopeLabel = getPrintScopeLabel();
   let bodyHtml;
   if (histSymFilter && histViewMode === 'graph') {
     const sym = state.symptoms.find(s => s.id === histSymFilter);
-    bodyHtml = `<div class="pr-graph-wrap">${buildPrintGraphSVG(histSymFilter, showTrend)}</div>`;
-    if (sym) bodyHtml = `<div class="pr-cat-title">${sym.name} — ${sym.category || 'General'}</div>` + bodyHtml;
+    const label = sym ? `<div class="pr-cat-title">${escapeHtml(sym.name)} — ${sym.category || 'General'}</div>` : '';
+    bodyHtml = label + `<div class="pr-graph-wrap">${buildPrintGraphSVG(histSymFilter, showTrend)}</div>`;
   } else if (histSymFilter) {
     const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === histSymFilter));
     bodyHtml = buildPrintSymptomListBody(entries);
@@ -3497,15 +3535,44 @@ function buildPrintReport() {
     const entries = getTimeFilteredEntries(
       histCatFilter ? state.entries.filter(e => (e.category||'General') === histCatFilter) : state.entries
     );
-    bodyHtml = buildPrintGroupedBody(entries, !histCatFilter);
+    const careEvts = showCareEvents ? getTimeFilteredEntries(state.careEvents) : [];
+    bodyHtml = buildPrintGroupedBody(entries, careEvts, showTrend);
   }
+  renderPrintDoc(bodyHtml, scopeLabel, timeLabel);
+}
 
-  container.innerHTML = `
-    <h1>Symptom Tracking Summary</h1>
-    <div class="pr-meta">Profile: ${profileName}</div>
-    <div class="pr-scope">${getPrintScopeLabel()} · ${getPrintTimeLabel()}</div>
-    ${bodyHtml}
-    <div class="pr-footer">Generated ${generatedStr}</div>`;
+// ── Print All (Data tab) ──
+function triggerPrintAll() {
+  const filterFn = getPrintAllFilteredEntries;
+  const timeLabel = printAllTimeFilter === 'all' ? 'All time'
+    : printAllTimeFilter === '7d' ? 'Last 7 days'
+    : printAllTimeFilter === '30d' ? 'Last 30 days'
+    : printAllTimeFilter === '90d' ? 'Last 90 days'
+    : (printAllTimeFilter === 'custom' && printAllCustomStart)
+      ? `${calFmt(printAllCustomStart)} → ${calFmt(printAllCustomEnd)}`
+      : 'All time';
+  let bodyHtml;
+  if (printAllMode === 'text') {
+    const entries  = filterFn(state.entries);
+    const careEvts = printAllCare ? filterFn(state.careEvents) : [];
+    bodyHtml = buildPrintGroupedBody(entries, careEvts, printAllTrend);
+  } else {
+    // Chart every chartable symptom, grouped by category, skipping Occurrences
+    bodyHtml = ['General', 'Symptoms'].map(cat => {
+      const syms = state.symptoms.filter(s => (s.category || 'General') === cat);
+      if (!syms.length) return '';
+      const charts = syms.map(sym => {
+        const svgHtml = buildPrintGraphSVG(sym.id, printAllTrend, filterFn);
+        return `<div style="margin-top:16px">
+          <span style="font-size:13px;font-weight:700">${escapeHtml(sym.name)}</span>
+          <div class="pr-graph-wrap">${svgHtml}</div>
+        </div>`;
+      }).join('');
+      return `<div class="pr-cat-title">${cat}</div>${charts}`;
+    }).join('');
+  }
+  const scopeLabel = printAllMode === 'text' ? 'All entries — List' : 'All symptoms — Chart';
+  renderPrintDoc(bodyHtml, scopeLabel, timeLabel);
 }
 
 function getPrintAllFilteredEntries(entries) {
@@ -3541,47 +3608,6 @@ function togglePrintAllCare() {
   if (btn) btn.className = 'hvb' + (printAllCare ? ' hvb-on' : '');
 }
 
-function triggerPrintAll() {
-  const container = document.getElementById('print-report');
-  const profileName = getActiveProfile() ? getActiveProfile().name : '';
-  const timeLabel = printAllTimeFilter === 'all' ? 'All time'
-    : printAllTimeFilter === '7d' ? 'Last 7 days'
-    : printAllTimeFilter === '30d' ? 'Last 30 days'
-    : printAllTimeFilter === 'custom' && printAllCustomStart ? `${calFmt(printAllCustomStart)} → ${calFmt(printAllCustomEnd)}`
-    : 'Last 90 days';
-  const generatedStr = new Date().toLocaleString('en-US', {dateStyle:'medium', timeStyle:'short'});
-  const formatLabel = printAllMode === 'text' ? 'All entries — List' : 'All symptoms — Chart';
-
-  let bodyHtml = '';
-  if (printAllMode === 'text') {
-    const entries = getPrintAllFilteredEntries(state.entries);
-    const careEvents = printAllCare ? getPrintAllFilteredEntries(state.careEvents) : [];
-    bodyHtml = buildPrintGroupedBody(entries, careEvents, printAllTrend);
-  } else {
-    // Chart mode: group by category, skip Occurrences (no quantitative data to chart)
-    const chartable = ['General', 'Symptoms'];
-    bodyHtml = chartable.map(cat => {
-      const syms = state.symptoms.filter(s => (s.category || 'General') === cat);
-      if (!syms.length) return '';
-      return `<div class="pr-cat-title">${cat}</div>` +
-        syms.map(sym => {
-          const svgHtml = buildPrintGraphSVG(sym.id, printAllTrend);
-          return `<div style="margin-top:16px"><span style="font-size:13px;font-weight:700">${escapeHtml(sym.name)}</span>
-            <div class="pr-graph-wrap">${svgHtml}</div></div>`;
-        }).join('');
-    }).join('');
-  }
-
-  container.innerHTML = `
-    <h1>Symptom Tracking Summary</h1>
-    <div class="pr-meta">Profile: ${escapeHtml(profileName)}</div>
-    <div class="pr-scope">${formatLabel} · ${timeLabel}</div>
-    ${bodyHtml}
-    <div class="pr-footer">Generated ${generatedStr}</div>`;
-
-  window.print();
-}
-
 function renderPrintAllTimeChips() {
   document.querySelectorAll('#print-all-chips .time-chip').forEach(b =>
     b.classList.toggle('time-chip-active', b.dataset.range === printAllTimeFilter));
@@ -3609,26 +3635,38 @@ function initPrintAllChips() {
   });
 }
 
-function triggerPrint() {
-  buildPrintReport();
-  window.print();
-}
-
 function renderFilteredHistory(symId) {
   const body = document.getElementById('history-body');
   const sym  = state.symptoms.find(s => s.id === symId);
   if (!sym) { body.innerHTML = ''; return; }
   const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId))
+    .map(e => ({ ...e, _kind: 'sym' }));
+  const careEvts = showCareEvents
+    ? getTimeFilteredEntries(state.careEvents).map(e => ({ ...e, _kind: 'care' }))
+    : [];
+  const combined = [...entries, ...careEvts]
     .sort((a,b) => (b.savedAt||0) - (a.savedAt||0) || b.date.localeCompare(a.date));
   const timeLabel = histTimeFilter === 'all' ? '' : ' in the last ' + (histTimeFilter === '7d' ? '7 days' : histTimeFilter === '30d' ? '30 days' : '90 days');
-  if (!entries.length) {
+  if (!combined.length) {
     body.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--subtext);font-size:14px">No entries${timeLabel}. ${histTimeFilter !== 'all' ? 'Try a longer range.' : ''}</div>`;
     return;
   }
   const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
 
-  body.innerHTML = `
-    ${entries.map(e => `
+  body.innerHTML = combined.map(e => {
+    if (e._kind === 'care') {
+      return `
+        <div class="hist-entry" style="border-left:3px solid #e63946">
+          <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}</div>
+          <div class="ce-row" style="padding:0;margin-top:2px">
+            <span class="ce-icon">${CE_ICON[e.category]||''}</span>
+            <span class="ce-name">${escapeHtml(e.typeName)}</span>
+            <span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span>
+          </div>
+          ${e.notes ? `<div class="ce-notes">${escapeHtml(e.notes)}</div>` : ''}
+        </div>`;
+    }
+    return `
       <div class="hist-entry tappable" data-entry-id="${e.id}">
         <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}${e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${periodName[e.period] || e.period}</span>` : ''}</div>
         ${e.category === 'Occurrences' ? `
@@ -3637,11 +3675,12 @@ function renderFilteredHistory(symId) {
           ${e.time && e.occMode !== 'none' ? `<span class="badge b-none">${fmtTime(e.time)}</span>` : ''}
         </div>` : `
         <div class="hist-badge-grid">
-          <span class="tl-badge-col">${e.relative ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
+          <span class="tl-badge-col">${(showTrend && e.relative) ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
           <span class="tl-badge-col">${e.absolute ? `<span class="badge b-${e.absolute}">${FACE_LABEL[e.absolute]||e.absolute}</span>` : ''}</span>
         </div>`}
         ${e.notes ? `<div class="hist-entry-notes">${escapeHtml(e.notes)}</div>` : ''}
-      </div>`).join('')}`;
+      </div>`;
+  }).join('');
 
   body.onclick = function(ev) {
     const card = ev.target.closest('.hist-entry.tappable');
@@ -4193,6 +4232,18 @@ appTheme = localStorage.getItem('appTheme') || 'dark';
 applyTheme();
 document.querySelectorAll('[data-theme-btn]').forEach(b =>
   b.classList.toggle('active', b.dataset.themeBtn === appTheme));
+(function() {
+  const vEl = document.getElementById('about-version');
+  const dEl = document.getElementById('about-build-date');
+  if (vEl) vEl.textContent = APP_VERSION;
+  if (dEl) {
+    const d = new Date(APP_BUILD_DATE);
+    dEl.textContent = d.toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+})();
 currentEventDate = todayStr();      // now safe — constants are defined
 initProfiles();
 loadActiveProfileData();
