@@ -1189,7 +1189,7 @@ let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
 const APP_VERSION = 'v33';
-const APP_BUILD_DATE = 'Jul 3, 2026 8:05 PM EDT'; // update on every deploy
+const APP_BUILD_DATE = 'Jul 3, 2026 8:30 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -2206,6 +2206,19 @@ function summaryDiscard() {
   }
 }
 
+function doneSummary() {
+  persist();
+  sessionSnapshot  = null;
+  sessionDirty     = false;
+  draft            = {};
+  currentStep      = 0;
+  cancelConfirmMode = false;
+  const logTop = document.getElementById('log-top');
+  if (logTop) logTop.style.display = '';
+  const area = document.getElementById('carousel-area');
+  if (area) area.innerHTML = '';
+}
+
 function renderSummary() {
   const area   = document.getElementById('carousel-area');
   const logTop = document.getElementById('log-top');
@@ -2262,9 +2275,8 @@ function renderSummary() {
       <div class="summary-when">${dateLabel} \u00b7 ${periodLabel}</div>
     </div>
     <div class="summary-table">${cells}</div>
-    <button onclick="document.getElementById('log-top').style.display='';currentStep=0;renderCarousel();"
-      style="margin-top:18px;width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer"
-      onclick="sessionSnapshot=null;sessionDirty=false;openCarousel();">Done</button>
+    <button onclick="doneSummary()"
+      style="margin-top:18px;width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer">Done</button>
     <div style="display:flex;gap:10px;margin-top:10px">
       <button onclick="currentStep=0;document.getElementById('log-top').style.display='';renderCarousel();"
         style="flex:1;padding:12px;border-radius:12px;background:var(--surface);color:var(--accent);border:1px solid var(--accent);font-size:14px;font-weight:700;cursor:pointer">Edit</button>
