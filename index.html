@@ -578,6 +578,12 @@ nav {
 .hvb.hvb-active   { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 .hvb.hvb-on       { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 .hvb.hvb-disabled { opacity: .35; cursor: default; pointer-events: none; }
+/* Split toggle buttons */
+.split-btn { gap: 3px; padding: 5px 3px; }
+.split-btn .s-left, .split-btn .s-right { display:flex; align-items:center; transition:color .15s; }
+.split-btn .s-slash { font-size:12px; line-height:1; color:var(--border); user-select:none; }
+.s-active { color: var(--accent); }
+.s-dim    { color: var(--border); }
 
 /* ── Care event items in history ── */
 .ce-row {
@@ -1015,8 +1021,21 @@ nav {
       <span class="profile-label" id="profile-label-data"></span>
     </div>
     <div class="exp-card">
-      <div class="exp-card-title">Print All Data</div>
-      <div class="exp-card-body">Print or save a PDF of your full history. Choose a time range and format.</div>
+      <div class="exp-card-title">Print Text and Chart Reports</div>
+      <div class="exp-card-body">Print or save a PDF. Choose a scope, time range, and format. In Chart mode, all symptoms in the selected scope are charted together.</div>
+      <div class="hist-filter-wrap">
+        <select class="hist-select" id="pr-cat-select" onchange="setPrintScope(this.value)">
+          <option value="">All entries</option>
+          <option value="General">General</option>
+          <option value="Symptoms">Symptoms</option>
+          <option value="Occurrences">Occurrences</option>
+          <option value="Care Events">Care Events</option>
+        </select>
+        <select class="hist-select" id="pr-sym-select" style="margin-top:8px;opacity:0.4;pointer-events:none" onchange="setPrintSymFilter(this.value)">
+          <option value="">Select a category first…</option>
+        </select>
+      </div>
+      <div class="hist-section-label">Display options</div>
       <div class="hist-display-group" id="print-all-chips" style="margin-bottom:6px">
         <button class="time-chip time-chip-active" data-range="all">All</button>
         <button class="time-chip" data-range="7d">7d</button>
@@ -1025,11 +1044,49 @@ nav {
         <button class="time-chip" data-range="custom" onclick="openCalendar('printall')">Custom</button>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px">
-        <div class="hist-display-group" style="flex:1">
-          <button class="hvb hvb-active" id="pa-hvb-text"  onclick="setPrintAllMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-          <button class="hvb"           id="pa-hvb-graph" onclick="setPrintAllMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+        <div class="hist-display-group" style="flex:3">
+          <!-- Button 1: Text / Chart -->
+          <button class="hvb split-btn" id="pa-hvb-mode" onclick="togglePrintMode()">
+            <span class="s-left s-active">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="21" y1="5" x2="3" y2="5"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="15" x2="3" y2="15"/><line x1="17" y1="20" x2="3" y2="20"/></svg>
+            </span>
+            <span class="s-slash">/</span>
+            <span class="s-right s-dim">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+          </button>
+          <!-- Button 2: Newest-first / Oldest-first (disabled in chart mode) -->
+          <button class="hvb split-btn" id="pa-hvb-sort" onclick="togglePrintSort()">
+            <span class="s-left s-active">
+              <svg width="18" height="12" viewBox="0 0 18 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="5" cy="6" r="4"/><line x1="5" y1="3.5" x2="5" y2="6"/><line x1="5" y1="6" x2="7" y2="6"/>
+                <polyline points="11,9.5 13.5,2.5 16,9.5"/>
+              </svg>
+            </span>
+            <span class="s-slash">/</span>
+            <span class="s-right s-dim">
+              <svg width="18" height="12" viewBox="0 0 18 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="5" cy="6" r="4"/><line x1="5" y1="3.5" x2="5" y2="6"/><line x1="5" y1="6" x2="7" y2="6"/>
+                <polyline points="11,2.5 13.5,9.5 16,2.5"/>
+              </svg>
+            </span>
+          </button>
+          <!-- Button 3: Group by symptom / Group by period -->
+          <button class="hvb split-btn" id="pa-hvb-group" onclick="togglePrintGroupBy()">
+            <span class="s-left s-active">
+              <svg width="13" height="11" viewBox="0 0 24 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1,10 5,10 7,16 12,2 16,10 19,10 23,10"/>
+              </svg>
+            </span>
+            <span class="s-slash">/</span>
+            <span class="s-right s-dim">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+          </button>
         </div>
-        <div class="hist-display-group" style="flex:1">
+        <div class="hist-display-group" style="flex:2">
           <button class="hvb hvb-on" id="pa-hvb-trend" onclick="togglePrintAllTrend()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
           <button class="hvb hvb-on" id="pa-hvb-care"  onclick="togglePrintAllCare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
         </div>
@@ -1131,8 +1188,8 @@ let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
-const APP_VERSION = 'v32';
-const APP_BUILD_DATE = '2026-06-30T16:30:00-05:00'; // ISO 8601, local time of build
+const APP_VERSION = 'v33';
+const APP_BUILD_DATE = 'Jun 30, 2026 5:00 PM CDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1197,6 +1254,10 @@ let printAllTimeFilter = 'all';
 let printAllMode  = 'text';
 let printAllTrend = true;
 let printAllCare  = true;
+let printScope    = '';
+let printSymId    = '';
+let printSortOrder = 'newest';  // 'newest' | 'oldest'
+let printGroupBy   = 'symptom'; // 'symptom' | 'period'
 let pendingImportRows = null; // holds parsed CSV rows while user chooses Replace vs Merge // currently tapped graph point
 
 // Edit/delete state
@@ -1681,7 +1742,11 @@ function doSwitchScreen(name) {
   if (name === 'history') { histTimeFilter = 'all'; renderHistory(); }
   if (name === 'symptoms') renderSymptoms();
   if (name === 'events')   renderEventsScreen();
-  if (name === 'export')   { printAllTimeFilter = 'all'; renderPrintAllTimeChips(); }
+  if (name === 'export') {
+    printAllTimeFilter = 'all'; printScope = ''; printSymId = '';
+    printSortOrder = 'newest'; printGroupBy = 'symptom';
+    renderPrintAllTimeChips(); refreshPrintScope();
+  }
 }
 
 // ══ Carousel ══
@@ -2234,7 +2299,7 @@ function startEditEntry(idStr) {
     draft[sym.id] = { relative: entry.relative || null, absolute: entry.absolute || null, notes: entry.notes || '' };
   }
 
-  const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+  const periodName = PERIOD_NAME_MAP;
   const dStr = new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
   const bannerTxt = document.getElementById('edit-banner-text');
   if (bannerTxt) bannerTxt.textContent = `Editing "${sym.name}" · ${dStr} · ${periodName[entry.period] || entry.period}`;
@@ -2445,8 +2510,7 @@ function renderEntryRow(e) {
 
 // Renders date→period timeline groups for a flat list of entries (single category)
 function renderTimeline(entries) {
-  const periodOrder = {day:0, evening:1, afternoon:2, morning:3};
-  const periodName  = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+  const periodName  = PERIOD_NAME_MAP;
   const byDate = {};
   entries.forEach(e => {
     if (!byDate[e.date]) byDate[e.date] = {};
@@ -2469,7 +2533,7 @@ function renderTimeline(entries) {
       `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
     ).join('');
 
-    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (periodOrder[a]||0)-(periodOrder[b]||0));
+    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
     const periodsHtml = periods.map((p, pi) => {
       const items = byDate[date][p];
       const dotColor = items.some(e=>e.relative==='worse'||e.relative==='much-worse') ? 'var(--worse)'
@@ -2520,8 +2584,7 @@ function renderCareEventsHistory() {
 // Date-first timeline: Date → Category → Period → Entries
 // Used for the "All entries" view to show each day's full picture across all categories
 function renderDateFirstTimeline(entries) {
-  const periodOrder = {day:0, evening:1, afternoon:2, morning:3};
-  const periodName  = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+  const periodName  = PERIOD_NAME_MAP;
 
   const byDate = {};
   entries.forEach(e => {
@@ -2545,7 +2608,7 @@ function renderDateFirstTimeline(entries) {
 
     const catsHtml = CATEGORIES.map((cat, catIdx) => {
       if (!byDate[date][cat]) return '';
-      const periods = Object.keys(byDate[date][cat]).sort((a,b) => (periodOrder[a]||0)-(periodOrder[b]||0));
+      const periods = Object.keys(byDate[date][cat]).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
       const periodsHtml = periods.map((p, pi) => {
         const items = byDate[date][cat][p];
         const dotColor = items.some(e=>e.relative==='worse'||e.relative==='much-worse') ? 'var(--worse)'
@@ -2789,11 +2852,13 @@ function buildTrendArrow(cx, cy, relative) {
   const ANGLES = { 'better': -30, 'worse': 30, 'much-better': -60, 'much-worse': 60, 'same': 0 };
   const svgAngle = ANGLES[relative];
 
-  function arrowAtY(yOff) {
-    const x1 = -(GAP + L), x2 = -GAP;
-    const head = `<polyline points="${x2-AH},${yOff-AH*0.5} ${x2},${yOff} ${x2-AH},${yOff+AH*0.5}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  function arrowAtY(yOff, bodyLen, sw) {
+    const length = bodyLen || L;
+    const stroke = sw || 2.2;
+    const x1 = -(GAP + length), x2 = -GAP;
+    const head = `<polyline points="${x2-AH},${yOff-AH*0.5} ${x2},${yOff} ${x2-AH},${yOff+AH*0.5}" fill="none" stroke="${col}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"/>`;
     return `<g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${svgAngle})">
-      <line x1="${x1}" y1="${yOff}" x2="${x2}" y2="${yOff}" stroke="${col}" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="${x1}" y1="${yOff}" x2="${x2}" y2="${yOff}" stroke="${col}" stroke-width="${stroke}" stroke-linecap="round"/>
       ${head}
     </g>`;
   }
@@ -2802,8 +2867,8 @@ function buildTrendArrow(cx, cy, relative) {
   if (relative === 'much-better' || relative === 'much-worse') {
     return arrowAtY(-4) + arrowAtY(4);
   }
-  // same: shift upward so it sits above the connecting line rather than on it
-  if (relative === 'same') return arrowAtY(-9);
+  // same: shift upward so it sits above the connecting line, and slightly shorter/thinner to compensate optical illusion
+  if (relative === 'same') return arrowAtY(-9, 11, 1.8);
   return arrowAtY(0);
 }
 
@@ -2822,8 +2887,8 @@ function renderGraphPointPreview(entryId) {
   const e = state.entries.find(en => String(en.id) === String(entryId));
   if (!e) { container.innerHTML = ''; return; }
 
-  const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
-  const periodLabel = e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${periodName[e.period] || e.period}</span>` : '';
+  const periodName = PERIOD_NAME_MAP;
+  const periodLabel = e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${PERIOD_NAME_MAP[e.period] || e.period}</span>` : '';
 
   let badgesHtml;
   if (e.category === 'Occurrences') {
@@ -2861,6 +2926,7 @@ function embedCEIcon(cat, cx, cy, size, col) {
 
 function buildCareIconsSVG(rangeStart, rangeEnd, dayCenterXFn, mt, ch, iconSize, col, forPrint) {
   if (!forPrint && !showCareEvents) return '';
+  if (forPrint && !printAllCare) return '';
   const events = state.careEvents.filter(e => e.date >= rangeStart && e.date <= rangeEnd);
   if (!events.length) return '';
   const SZ = iconSize || 28;
@@ -3126,6 +3192,7 @@ function renderTrendGraph(symId, showTrend) {
 
 // ══ Print ══
 const PERIOD_NAME_MAP = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
+const PERIOD_ORDER    = {day:0, morning:1, afternoon:2, evening:3}; // chronological, all-day first
 
 function prBadgeColor(type) {
   const map = {
@@ -3200,7 +3267,7 @@ function prRenderSymptomEntryRow(e) {
     </div>`;
 }
 
-const PR_PERIOD_ORDER = {day:0, evening:1, afternoon:2, morning:3};
+// PR_PERIOD_ORDER removed — use PERIOD_ORDER constant
 
 // Mirrors the on-screen All/Category timeline: Date → Period subheader → grid-aligned entry rows
 // ══ Calendar widget ══
@@ -3347,21 +3414,21 @@ document.addEventListener('click',function(ev){
   if(ev.target.id==='cal-overlay') closeCalendar();
 });
 
-function buildPrintGroupedBody(entries, careEvents, showTrend) {
+function buildPrintGroupedBody(entries, careEvents, showTrend, sortNewest, groupBy) {
+  if (sortNewest === undefined) sortNewest = true; // default newest first
+  groupBy = groupBy || 'symptom';
   const hasCare = careEvents && careEvents.length;
   if (!entries.length && !hasCare) return `<div class="pr-empty">No entries in this range.</div>`;
 
-  // Collect all dates, sorted oldest first for medical reports
   const allDates = [...new Set([
     ...entries.map(e => e.date),
     ...(hasCare ? careEvents.map(e => e.date) : [])
-  ])].sort((a,b) => a.localeCompare(b));
+  ])].sort((a,b) => sortNewest ? b.localeCompare(a) : a.localeCompare(b));
 
   return allDates.map(date => {
     const d = new Date(date + 'T12:00:00');
     const dateStr = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
 
-    // Care events for this date
     let careForDate = '';
     if (hasCare) {
       const ces = careEvents.filter(e => e.date === date);
@@ -3373,26 +3440,37 @@ function buildPrintGroupedBody(entries, careEvents, showTrend) {
       }
     }
 
-    // Symptom entries grouped by category then period
     const dateEntries = entries.filter(e => e.date === date);
     let symptomsForDate = '';
     if (dateEntries.length) {
-      symptomsForDate = CATEGORIES.map(cat => {
-        const catEntries = dateEntries.filter(e => (e.category || 'General') === cat);
-        if (!catEntries.length) return '';
-        const byPeriod = {};
-        catEntries.forEach(e => { (byPeriod[e.period] = byPeriod[e.period] || []).push(e); });
-        const periods = Object.keys(byPeriod).sort((a,b) => (PR_PERIOD_ORDER[b]||0) - (PR_PERIOD_ORDER[a]||0));
-        return periods.map(p =>
-          `<div class="pr-period-title">${cat} · ${PERIOD_NAME_MAP[p] || p}</div>` +
-          byPeriod[p].map(e => prRenderGridEntryRow(e, showTrend)).join('')
+      if (groupBy === 'period') {
+        // Period → Entries (category shown inline via symptom name)
+        const periods = [...new Set(dateEntries.map(e => e.period))]
+          .sort((a,b) => (PERIOD_ORDER[a]||0) - (PERIOD_ORDER[b]||0));
+        symptomsForDate = periods.map(p =>
+          `<div class="pr-period-title">${PERIOD_NAME_MAP[p] || p}</div>` +
+          dateEntries.filter(e => e.period === p).map(e => prRenderGridEntryRow(e, showTrend)).join('')
         ).join('');
-      }).filter(Boolean).join('');
+      } else {
+        // Category → Period → Entries (default)
+        symptomsForDate = CATEGORIES.map(cat => {
+          const catEntries = dateEntries.filter(e => (e.category || 'General') === cat);
+          if (!catEntries.length) return '';
+          const byPeriod = {};
+          catEntries.forEach(e => { (byPeriod[e.period] = byPeriod[e.period] || []).push(e); });
+          const periods = Object.keys(byPeriod).sort((a,b) => (PERIOD_ORDER[a]||0) - (PERIOD_ORDER[b]||0));
+          return periods.map(p =>
+            `<div class="pr-period-title">${cat} · ${PERIOD_NAME_MAP[p] || p}</div>` +
+            byPeriod[p].map(e => prRenderGridEntryRow(e, showTrend)).join('')
+          ).join('');
+        }).filter(Boolean).join('');
+      }
     }
 
     return `<div class="pr-date">${dateStr}</div>${careForDate}${symptomsForDate}`;
   }).join('');
 }
+
 
 // Flat chronological list for the single-symptom List-mode scope
 function buildPrintSymptomListBody(entries) {
@@ -3536,13 +3614,14 @@ function triggerPrint() {
       histCatFilter ? state.entries.filter(e => (e.category||'General') === histCatFilter) : state.entries
     );
     const careEvts = showCareEvents ? getTimeFilteredEntries(state.careEvents) : [];
-    bodyHtml = buildPrintGroupedBody(entries, careEvts, showTrend);
+    bodyHtml = buildPrintGroupedBody(entries, careEvts, showTrend, true, 'symptom');
   }
   renderPrintDoc(bodyHtml, scopeLabel, timeLabel);
 }
 
 // ── Print All (Data tab) ──
 function triggerPrintAll() {
+  try {
   const filterFn = getPrintAllFilteredEntries;
   const timeLabel = printAllTimeFilter === 'all' ? 'All time'
     : printAllTimeFilter === '7d' ? 'Last 7 days'
@@ -3551,28 +3630,57 @@ function triggerPrintAll() {
     : (printAllTimeFilter === 'custom' && printAllCustomStart)
       ? `${calFmt(printAllCustomStart)} → ${calFmt(printAllCustomEnd)}`
       : 'All time';
-  let bodyHtml;
-  if (printAllMode === 'text') {
-    const entries  = filterFn(state.entries);
-    const careEvts = printAllCare ? filterFn(state.careEvents) : [];
-    bodyHtml = buildPrintGroupedBody(entries, careEvts, printAllTrend);
+
+  // Scope label
+  let scopeLabel;
+  if (!printScope) {
+    scopeLabel = printAllMode === 'text' ? 'All entries — List' : 'All symptoms — Chart';
+  } else if (printSymId) {
+    const sym = state.symptoms.find(s => s.id === printSymId);
+    scopeLabel = sym ? `${sym.category || 'General'} — ${sym.name}` : printScope;
   } else {
-    // Chart every chartable symptom, grouped by category, skipping Occurrences
-    bodyHtml = ['General', 'Symptoms'].map(cat => {
-      const syms = state.symptoms.filter(s => (s.category || 'General') === cat);
-      if (!syms.length) return '';
-      const charts = syms.map(sym => {
-        const svgHtml = buildPrintGraphSVG(sym.id, printAllTrend, filterFn);
-        return `<div style="margin-top:16px">
-          <span style="font-size:13px;font-weight:700">${escapeHtml(sym.name)}</span>
-          <div class="pr-graph-wrap">${svgHtml}</div>
-        </div>`;
-      }).join('');
-      return `<div class="pr-cat-title">${cat}</div>${charts}`;
-    }).join('');
+    scopeLabel = `${printScope} — All`;
   }
-  const scopeLabel = printAllMode === 'text' ? 'All entries — List' : 'All symptoms — Chart';
+
+  let bodyHtml;
+  if (printScope === 'Care Events') {
+    // Care Events scope — text only
+    const ces = filterFn(
+      printSymId ? state.careEvents.filter(e => e.category === printSymId) : state.careEvents
+    );
+    bodyHtml = buildPrintGroupedBody([], ces, printAllTrend, printSortOrder === 'newest', printGroupBy);
+  } else if (printAllMode === 'text') {
+    let entries = filterFn(state.entries);
+    if (printScope) entries = entries.filter(e => (e.category || 'General') === printScope);
+    if (printSymId) entries = entries.filter(e => e.symptomId === printSymId);
+    const careEvts = printAllCare ? filterFn(state.careEvents) : [];
+    bodyHtml = buildPrintGroupedBody(entries, careEvts, printAllTrend, printSortOrder === 'newest', printGroupBy);
+  } else {
+    // Chart mode — all chartable symptoms in scope
+    const cats = printScope ? [printScope] : ['General', 'Symptoms'];
+    if (printSymId) {
+      // Single symptom chart
+      const sym = state.symptoms.find(s => s.id === printSymId);
+      const svgHtml = buildPrintGraphSVG(printSymId, printAllTrend, filterFn);
+      bodyHtml = sym ? `<div class="pr-cat-title">${escapeHtml(sym.name)} — ${sym.category||'General'}</div>
+        <div class="pr-graph-wrap">${svgHtml}</div>` : svgHtml;
+    } else {
+      bodyHtml = cats.map(cat => {
+        const syms = state.symptoms.filter(s => (s.category || 'General') === cat);
+        if (!syms.length) return '';
+        const charts = syms.map(sym => {
+          const svgHtml = buildPrintGraphSVG(sym.id, printAllTrend, filterFn);
+          return `<div style="margin-top:16px">
+            <span style="font-size:13px;font-weight:700">${escapeHtml(sym.name)}</span>
+            <div class="pr-graph-wrap">${svgHtml}</div>
+          </div>`;
+        }).join('');
+        return `<div class="pr-cat-title">${cat}</div>${charts}`;
+      }).join('');
+    }
+  }
   renderPrintDoc(bodyHtml, scopeLabel, timeLabel);
+  } catch(err) { toast('Print error: ' + err.message); console.error(err); }
 }
 
 function getPrintAllFilteredEntries(entries) {
@@ -3588,24 +3696,115 @@ function getPrintAllFilteredEntries(entries) {
   return entries.filter(e => (e.savedAt || new Date(e.date + 'T12:00:00').getTime()) >= cutoff);
 }
 
+function setPrintScope(cat) {
+  printScope = cat;
+  printSymId = '';
+  const symSel = document.getElementById('pr-sym-select');
+  if (!cat) {
+    symSel.innerHTML = '<option value="">Select a category first…</option>';
+    symSel.style.opacity = '0.4'; symSel.style.pointerEvents = 'none';
+  } else if (cat === 'Care Events') {
+    symSel.style.opacity = '1'; symSel.style.pointerEvents = 'auto';
+    symSel.innerHTML = `<option value="">All Care Events</option>` +
+      CE_CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+  } else {
+    const syms = state.symptoms.filter(s => (s.category || 'General') === cat);
+    symSel.style.opacity = '1'; symSel.style.pointerEvents = 'auto';
+    symSel.innerHTML = `<option value="">All ${cat}</option>` +
+      syms.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  }
+  updatePrintToggle();
+}
+
+function setPrintSymFilter(val) {
+  printSymId = val;
+  updatePrintToggle();
+}
+
+function updatePrintToggle() {
+  const isCE  = printScope === 'Care Events';
+  const isOcc = printScope === 'Occurrences';
+  const canChart = !isCE && !isOcc;
+
+  // Force text if scope can't be charted
+  if (!canChart && printAllMode === 'graph') printAllMode = 'text';
+
+  // Force care on when CE scope
+  if (isCE) printAllCare = true;
+
+  // Trend / Care buttons
+  const tTrend = document.getElementById('pa-hvb-trend');
+  const tCare  = document.getElementById('pa-hvb-care');
+  if (tTrend) tTrend.className = 'hvb' + (printAllTrend ? ' hvb-on' : '');
+  if (tCare)  tCare.className  = 'hvb' + (printAllCare ? ' hvb-on' : '') + (isCE ? ' hvb-disabled' : '');
+
+  // Split button 1: Text / Chart
+  const modeBtn = document.getElementById('pa-hvb-mode');
+  if (modeBtn) {
+    const l = modeBtn.querySelector('.s-left');
+    const r = modeBtn.querySelector('.s-right');
+    if (l) l.className = 's-left '  + (printAllMode === 'text'  ? 's-active' : 's-dim');
+    if (r) r.className = 's-right ' + (!canChart ? 's-dim' : printAllMode === 'graph' ? 's-active' : 's-dim');
+  }
+
+  // Split button 2: Newest / Oldest (disabled in chart mode)
+  const sortBtn = document.getElementById('pa-hvb-sort');
+  if (sortBtn) {
+    const dis = printAllMode !== 'text';
+    sortBtn.className = 'hvb split-btn' + (dis ? ' hvb-disabled' : '');
+    const l = sortBtn.querySelector('.s-left');
+    const r = sortBtn.querySelector('.s-right');
+    if (l) l.className = 's-left '  + (dis || printSortOrder === 'newest' ? (dis ? 's-dim' : 's-active') : 's-dim');
+    if (r) r.className = 's-right ' + (dis || printSortOrder === 'oldest' ? (dis ? 's-dim' : 's-active') : 's-dim');
+  }
+
+  // Split button 3: Symptom / Period
+  const groupBtn = document.getElementById('pa-hvb-group');
+  if (groupBtn) {
+    const l = groupBtn.querySelector('.s-left');
+    const r = groupBtn.querySelector('.s-right');
+    if (l) l.className = 's-left '  + (printGroupBy === 'symptom' ? 's-active' : 's-dim');
+    if (r) r.className = 's-right ' + (printGroupBy === 'period'  ? 's-active' : 's-dim');
+  }
+}
+
+function togglePrintMode() {
+  printAllMode = printAllMode === 'text' ? 'graph' : 'text';
+  updatePrintToggle();
+}
+
+function togglePrintSort() {
+  if (printAllMode !== 'text') return;
+  printSortOrder = printSortOrder === 'newest' ? 'oldest' : 'newest';
+  updatePrintToggle();
+}
+
+function togglePrintGroupBy() {
+  printGroupBy = printGroupBy === 'symptom' ? 'period' : 'symptom';
+  updatePrintToggle();
+}
+
+function refreshPrintScope() {
+  const catSel = document.getElementById('pr-cat-select');
+  const symSel = document.getElementById('pr-sym-select');
+  if (catSel) catSel.value = printScope;
+  if (symSel) symSel.value = printSymId;
+  updatePrintToggle();
+}
+
 function setPrintAllMode(mode) {
   printAllMode = mode;
-  const tText  = document.getElementById('pa-hvb-text');
-  const tGraph = document.getElementById('pa-hvb-graph');
-  if (tText)  tText.className  = 'hvb' + (mode === 'text'  ? ' hvb-active' : '');
-  if (tGraph) tGraph.className = 'hvb' + (mode === 'graph' ? ' hvb-active' : '');
+  updatePrintToggle();
 }
 
 function togglePrintAllTrend() {
   printAllTrend = !printAllTrend;
-  const btn = document.getElementById('pa-hvb-trend');
-  if (btn) btn.className = 'hvb' + (printAllTrend ? ' hvb-on' : '');
+  updatePrintToggle();
 }
 
 function togglePrintAllCare() {
   printAllCare = !printAllCare;
-  const btn = document.getElementById('pa-hvb-care');
-  if (btn) btn.className = 'hvb' + (printAllCare ? ' hvb-on' : '');
+  updatePrintToggle();
 }
 
 function renderPrintAllTimeChips() {
@@ -3651,8 +3850,6 @@ function renderFilteredHistory(symId) {
     body.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--subtext);font-size:14px">No entries${timeLabel}. ${histTimeFilter !== 'all' ? 'Try a longer range.' : ''}</div>`;
     return;
   }
-  const periodName = {day:'All day', morning:'Morning', afternoon:'Afternoon', evening:'Evening'};
-
   body.innerHTML = combined.map(e => {
     if (e._kind === 'care') {
       return `
@@ -3668,7 +3865,7 @@ function renderFilteredHistory(symId) {
     }
     return `
       <div class="hist-entry tappable" data-entry-id="${e.id}">
-        <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}${e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${periodName[e.period] || e.period}</span>` : ''}</div>
+        <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}${e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${PERIOD_NAME_MAP[e.period] || e.period}</span>` : ''}</div>
         ${e.category === 'Occurrences' ? `
         <div class="hist-entry-badges">
           ${e.occMode === 'none' ? '<span class="badge b-none">none this period</span>' : ''}
@@ -4236,13 +4433,7 @@ document.querySelectorAll('[data-theme-btn]').forEach(b =>
   const vEl = document.getElementById('about-version');
   const dEl = document.getElementById('about-build-date');
   if (vEl) vEl.textContent = APP_VERSION;
-  if (dEl) {
-    const d = new Date(APP_BUILD_DATE);
-    dEl.textContent = d.toLocaleString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-      hour: 'numeric', minute: '2-digit'
-    });
-  }
+  if (dEl) dEl.textContent = APP_BUILD_DATE;
 })();
 currentEventDate = todayStr();      // now safe — constants are defined
 initProfiles();
