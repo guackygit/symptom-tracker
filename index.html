@@ -1189,7 +1189,7 @@ let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
 const APP_VERSION = 'v34';
-const APP_BUILD_DATE = 'Jul 4, 2026 1:35 PM EDT'; // update on every deploy
+const APP_BUILD_DATE = 'Jul 4, 2026 2:00 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1761,12 +1761,7 @@ function getPrev(symId) {
 
 function renderCarousel() {
   const area = document.getElementById('carousel-area');
-  // Sort by category order (General → Symptoms → Occurrences), stable within each category
-  let syms = [...state.symptoms].sort((a, b) => {
-    const ai = CATEGORIES.indexOf(a.category || 'General');
-    const bi = CATEGORIES.indexOf(b.category || 'General');
-    return ai - bi;
-  });
+  let syms = getSortedSymptoms();
   if (editingEntryId) syms = syms.filter(s => s.id === editingSymId);
 
   if (!syms.length) {
@@ -2008,9 +2003,18 @@ function setDraft(symId, field, val) {
   renderCarousel();
 }
 
+// Canonical symptom order — must match renderCarousel sort
+function getSortedSymptoms() {
+  return [...state.symptoms].sort((a, b) => {
+    const ai = CATEGORIES.indexOf(a.category || 'General');
+    const bi = CATEGORIES.indexOf(b.category || 'General');
+    return ai - bi;
+  });
+}
+
 function saveCurrentEntry() {
   if (editingEntryId) return; // edit flow has its own save
-  let syms = state.symptoms;
+  const syms = getSortedSymptoms(); // MUST match renderCarousel sort order
   if (!syms.length) return;
   const sym = syms[currentStep];
   if (!sym) return;
@@ -2065,7 +2069,7 @@ function saveCurrentEntry() {
 
 function nextStep() {
   saveCurrentEntry();
-  const syms = state.symptoms;
+  const syms = getSortedSymptoms();
   if (currentStep < syms.length - 1) {
     currentStep++;
     renderCarousel();
@@ -2208,15 +2212,8 @@ function summaryDiscard() {
 
 function doneSummary() {
   persist();
-  sessionSnapshot  = null;
-  sessionDirty     = false;
-  draft            = {};
-  currentStep      = 0;
   cancelConfirmMode = false;
-  const logTop = document.getElementById('log-top');
-  if (logTop) logTop.style.display = '';
-  const area = document.getElementById('carousel-area');
-  if (area) area.innerHTML = '';
+  openCarousel(); // re-opens carousel pre-populated with saved entries, clean session state
 }
 
 function renderSummary() {
