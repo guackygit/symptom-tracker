@@ -1189,7 +1189,7 @@ let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
 const APP_VERSION = 'v34';
-const APP_BUILD_DATE = 'Jul 5, 2026 11:44 AM EDT'; // update on every deploy
+const APP_BUILD_DATE = 'Jul 5, 2026 12:20 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1589,14 +1589,32 @@ function initProfilesUI() {
 }
 
 // ══ Screens ══
+// Returns true if the current carousel step has meaningful unsaved data worth prompting about
+function currentEntryHasData() {
+  if (!sessionSnapshot) return false;
+  const syms = getSortedSymptoms();
+  const sym = syms[currentStep];
+  if (!sym) return false;
+  const d = draft[sym.id] || {};
+  const cat = sym.category || 'General';
+  if (cat === 'Occurrences') {
+    return d.mode === 'none' ||
+      (d.mode === 'entries' && d.entries && d.entries.some(e => e.time || e.notes));
+  }
+  return !!(d.relative || d.absolute || d.notes);
+}
+
 function switchScreen(name) {
   if (editingEntryId && name !== 'log') discardEditMode();
-  // Intercept if leaving log with an active dirty session
   const logActive = document.getElementById('log-screen') && document.getElementById('log-screen').classList.contains('active');
-  if (name !== 'log' && logActive && sessionDirty) {
-    pendingNavTarget = name;
-    showNavWarning();
-    return;
+  if (name !== 'log' && logActive && sessionSnapshot) {
+    // Save current step if it has unsaved data before deciding whether to prompt
+    if (currentEntryHasData()) saveCurrentEntry();
+    if (sessionDirty) {
+      pendingNavTarget = name;
+      showNavWarning();
+      return;
+    }
   }
   if (name === 'log') { openCarousel(); doSwitchScreen('log'); return; }
   doSwitchScreen(name);
