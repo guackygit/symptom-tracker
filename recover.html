@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symptom Tracker — Data Recovery</title>
+<style>
+  body {
+    font-family: -apple-system, sans-serif;
+    background: #0f1117; color: #e8eaf6;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px; text-align: center;
+  }
+  h1 { font-size: 22px; margin-bottom: 12px; }
+  p  { font-size: 15px; color: #8890b0; margin-bottom: 32px; line-height: 1.5; }
+  button {
+    background: #6c8eff; color: #fff; border: none;
+    border-radius: 14px; padding: 16px 32px;
+    font-size: 17px; font-weight: 700; cursor: pointer;
+    margin-bottom: 16px; width: 100%; max-width: 320px;
+  }
+  #status { font-size: 14px; color: #8890b0; margin-top: 16px; min-height: 40px; }
+  #status.ok  { color: #3ecf8e; }
+  #status.err { color: #f06060; }
+</style>
+</head>
+<body>
+<h1>Data Recovery</h1>
+<p>Tap the button below to export all your symptom tracker data as a CSV file. Open this page in Safari on your iPhone.</p>
+<button onclick="recover()">Export My Data</button>
+<div id="status"></div>
+<script>
+function recover() {
+  const status = document.getElementById('status');
+  try {
+    // Find the profiles registry
+    const registry = JSON.parse(localStorage.getItem('symptomlog_profiles_v1') || 'null');
+    if (!registry || !registry.profiles || !registry.profiles.length) {
+      status.className = 'err';
+      status.textContent = 'No data found in this browser. Please open this page in Safari where your app data is stored.';
+      return;
+    }
+
+    const rows = ['Type,Date,Period,Category,Symptom,Trend,Level,OccMode,Time,Notes,SavedAt'];
+
+    registry.profiles.forEach(profile => {
+      const key = 'symptomlog_data_v1__' + profile.id;
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+
+      // Symptom entries
+      (data.entries || []).forEach(e => {
+        rows.push([
+          'symptom',
+          e.date || '',
+          e.period || '',
+          e.category || 'General',
+          '"' + (e.symptomName || '').replace(/"/g,'""') + '"',
+          e.relative || '',
+          e.absolute || '',
+          e.occMode || '',
+          e.time || '',
+          '"' + (e.notes || '').replace(/"/g,'""') + '"',
+          e.savedAt || ''
+        ].join(','));
+      });
+
+      // Care events
+      (data.careEvents || []).forEach(e => {
+        rows.push([
+          'care_event',
+          e.date || '',
+          '',
+          e.category || '',
+          '"' + (e.typeName || '').replace(/"/g,'""') + '"',
+          '',
+          '',
+          '',
+          '',
+          '"' + (e.notes || '').replace(/"/g,'""') + '"',
+          e.savedAt || ''
+        ].join(','));
+      });
+    });
+
+    if (rows.length <= 1) {
+      status.className = 'err';
+      status.textContent = 'No entries found. Your profiles exist but have no logged data.';
+      return;
+    }
+
+    // Download the CSV
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'symptom-tracker-backup-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    status.className = 'ok';
+    status.textContent = (rows.length - 1) + ' entries exported successfully. Check your Downloads folder.';
+
+  } catch(err) {
+    status.className = 'err';
+    status.textContent = 'Error: ' + err.message;
+  }
+}
+</script>
+</body>
+</html>
