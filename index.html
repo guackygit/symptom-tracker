@@ -805,43 +805,43 @@ nav {
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   color: #1a1a1a; background: #fff;
 }
-#print-report h1 { font-size: 19px; font-weight: 800; margin-bottom: 3px; }
-#print-report .pr-meta { font-size: 12px; color: #555; margin-bottom: 4px; }
-#print-report .pr-scope { font-size: 13px; color: #1a1a1a; font-weight: 600; margin-bottom: 18px; }
+#print-report h1 { font-size: 17px; font-weight: 800; margin-bottom: 2px; }
+#print-report .pr-meta { font-size: 10px; color: #555; margin-bottom: 3px; }
+#print-report .pr-scope { font-size: 11px; color: #1a1a1a; font-weight: 600; margin-bottom: 12px; }
 #print-report .pr-cat-title {
-  font-size: 14px; font-weight: 800; margin: 18px 0 8px;
-  border-bottom: 1.5px solid #999; padding-bottom: 4px;
+  font-size: 12px; font-weight: 800; margin: 12px 0 5px;
+  border-bottom: 1.5px solid #999; padding-bottom: 3px;
 }
 #print-report .pr-cat-title:first-of-type { margin-top: 0; }
-#print-report .pr-date { font-size: 12px; font-weight: 700; color: #333; margin: 12px 0 4px; }
+#print-report .pr-date { font-size: 10px; font-weight: 700; color: #333; margin: 8px 0 2px; }
 #print-report .pr-period-title {
-  font-size: 11px; font-weight: 700; color: #777; text-transform: uppercase;
-  letter-spacing: 0.5px; margin: 8px 0 4px 4px;
+  font-size: 9px; font-weight: 700; color: #777; text-transform: uppercase;
+  letter-spacing: 0.5px; margin: 4px 0 2px 4px;
 }
 #print-report .pr-row-grid {
-  display: grid; grid-template-columns: minmax(0,1fr) 120px 120px;
-  align-items: center; column-gap: 10px; font-size: 12.5px;
-  padding: 4px 0; border-bottom: 1px solid #eee;
+  display: grid; grid-template-columns: minmax(0,1fr) 110px 110px;
+  align-items: center; column-gap: 8px; font-size: 10.5px;
+  padding: 2px 0; border-bottom: 1px solid #eee;
 }
 #print-report .pr-sym-badge-grid {
-  display: grid; grid-template-columns: 120px 120px;
-  column-gap: 10px; margin-top: 3px;
+  display: grid; grid-template-columns: 110px 110px;
+  column-gap: 8px; margin-top: 2px;
 }
 #print-report .pr-entry-name { font-weight: 600; }
 #print-report .pr-entry {
-  font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid #e5e5e5;
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
+  font-size: 10.5px; padding: 3px 0; border-bottom: 1px solid #e5e5e5;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;
 }
-#print-report .pr-entry-time { color: #555; font-size: 11.5px; }
+#print-report .pr-entry-time { color: #555; font-size: 10px; }
 #print-report .pr-badge {
-  display: inline-block; font-size: 10.5px; font-weight: 700;
-  padding: 1px 7px; border-radius: 10px; border: 1.3px solid currentColor;
+  display: inline-block; font-size: 9px; font-weight: 700;
+  padding: 1px 5px; border-radius: 8px; border: 1px solid currentColor;
   white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px;
 }
-#print-report .pr-notes { width: 100%; font-size: 11.5px; font-style: italic; color: #555; margin-top: 1px; }
-#print-report .pr-empty { font-size: 13px; color: #777; padding: 20px 0; }
-#print-report .pr-graph-wrap { margin-top: 8px; }
-#print-report .pr-footer { margin-top: 24px; font-size: 10px; color: #999; }
+#print-report .pr-notes { width: 100%; font-size: 10px; font-style: italic; color: #555; margin-top: 1px; }
+#print-report .pr-empty { font-size: 11px; color: #777; padding: 12px 0; }
+#print-report .pr-graph-wrap { margin-top: 6px; break-inside: avoid; page-break-inside: avoid; }
+#print-report .pr-footer { margin-top: 16px; font-size: 9px; color: #999; }
 
 @media print {
   html, body {
@@ -1044,7 +1044,7 @@ nav {
         <button class="time-chip" data-range="custom" onclick="openCalendar('printall')">Custom</button>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px">
-        <div class="hist-display-group" style="flex:3">
+        <div class="hist-display-group" style="flex:3;border-color:var(--accent)">
           <!-- Button 1: Text / Chart -->
           <button class="hvb split-btn" id="pa-hvb-mode" onclick="togglePrintMode()">
             <span class="s-left s-active">
@@ -1090,6 +1090,12 @@ nav {
           <button class="hvb hvb-on" id="pa-hvb-trend" onclick="togglePrintAllTrend()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
           <button class="hvb hvb-on" id="pa-hvb-care"  onclick="togglePrintAllCare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
         </div>
+      </div>
+      <div id="pr-summary-label" style="margin-bottom:12px">
+        <div style="font-size:10px;color:var(--subtext);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Print Summary</div>
+        <div id="pr-sum-scope"  style="font-size:12px;color:var(--text);margin-bottom:3px"></div>
+        <div id="pr-sum-format" style="font-size:12px;color:var(--text);margin-bottom:3px"></div>
+        <div id="pr-sum-opts"   style="font-size:12px;color:var(--text)"></div>
       </div>
       <button class="exp-btn exp-btn-primary" onclick="triggerPrintAll()">Print</button>
     </div>
@@ -1188,8 +1194,8 @@ let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
-const APP_VERSION = 'v34';
-const APP_BUILD_DATE = 'Jul 5, 2026 12:20 PM EDT'; // update on every deploy
+const APP_VERSION = 'v35';
+const APP_BUILD_DATE = 'Jul 5, 2026 3:00 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1589,19 +1595,37 @@ function initProfilesUI() {
 }
 
 // ══ Screens ══
-// Returns true if the current carousel step has meaningful unsaved data worth prompting about
+// Returns true only if the current draft for this symptom differs from the pre-session snapshot
+function draftDiffersFromSnapshot(sym) {
+  const d   = draft[sym.id] || {};
+  const pre = (sessionSnapshot || []).find(e => e.symptomId === sym.id);
+  const cat = sym.category || 'General';
+  if (cat === 'Occurrences') {
+    const preMode  = pre ? pre.occMode : null;
+    const preTime  = pre ? (pre.time   || null) : null;
+    const preNotes = pre ? (pre.notes  || null) : null;
+    const curMode  = d.mode  || null;
+    const curEntry = d.entries && d.entries[0] ? d.entries[0] : null;
+    const curTime  = curEntry ? (curEntry.time  || null) : null;
+    const curNotes = curEntry ? (curEntry.notes || null) : null;
+    return curMode !== preMode || curTime !== preTime || curNotes !== preNotes;
+  }
+  const curRel   = d.relative || null;
+  const curAbs   = d.absolute || null;
+  const curNotes = d.notes ? d.notes.trim() || null : null;
+  const preRel   = pre ? (pre.relative || null) : null;
+  const preAbs   = pre ? (pre.absolute || null) : null;
+  const preNotes = pre ? (pre.notes ? pre.notes.trim() || null : null) : null;
+  return curRel !== preRel || curAbs !== preAbs || curNotes !== preNotes;
+}
+
+// Returns true if the current carousel step has unsaved data that differs from pre-session state
 function currentEntryHasData() {
   if (!sessionSnapshot) return false;
   const syms = getSortedSymptoms();
-  const sym = syms[currentStep];
+  const sym  = syms[currentStep];
   if (!sym) return false;
-  const d = draft[sym.id] || {};
-  const cat = sym.category || 'General';
-  if (cat === 'Occurrences') {
-    return d.mode === 'none' ||
-      (d.mode === 'entries' && d.entries && d.entries.some(e => e.time || e.notes));
-  }
-  return !!(d.relative || d.absolute || d.notes);
+  return draftDiffersFromSnapshot(sym);
 }
 
 function switchScreen(name) {
@@ -2082,7 +2106,7 @@ function saveCurrentEntry() {
     }
   }
   persist();
-  sessionDirty = true;
+  if (draftDiffersFromSnapshot(sym)) sessionDirty = true;
 }
 
 function nextStep() {
@@ -3511,8 +3535,8 @@ function buildPrintGraphSVG(symId, showTrend, filterFn) {
   if (!data || !data.points.length) return `<div class="pr-empty">No plottable data yet.</div>`;
   const {cat, points, calendarGrid} = data;
 
-  const VW = 680, VH = 320;
-  const ml = 60, mr = 20, mt = 20, mb = 50;
+  const VW = 680, VH = 180;
+  const ml = 60, mr = 20, mt = 16, mb = 35;
   const cw = VW - ml - mr, ch = VH - mt - mb;
 
   let yMin, yMax, yTicks, yLabelFn;
@@ -3695,14 +3719,14 @@ function triggerPrintAll() {
       bodyHtml = cats.map(cat => {
         const syms = state.symptoms.filter(s => (s.category || 'General') === cat);
         if (!syms.length) return '';
-        const charts = syms.map(sym => {
+        const charts = syms.map((sym, i) => {
           const svgHtml = buildPrintGraphSVG(sym.id, printAllTrend, filterFn);
-          return `<div style="margin-top:16px">
+          return `<div style="margin-top:12px;break-inside:avoid;page-break-inside:avoid">
             <span style="font-size:13px;font-weight:700">${escapeHtml(sym.name)}</span>
             <div class="pr-graph-wrap">${svgHtml}</div>
           </div>`;
         }).join('');
-        return `<div class="pr-cat-title">${cat}</div>${charts}`;
+        return `<div style="break-inside:avoid;page-break-inside:avoid"><div class="pr-cat-title">${cat}</div>${charts}</div>`;
       }).join('');
     }
   }
@@ -3721,6 +3745,46 @@ function getPrintAllFilteredEntries(entries) {
   const days = printAllTimeFilter === '7d' ? 7 : printAllTimeFilter === '30d' ? 30 : 90;
   const cutoff = Date.now() - days * 86400000;
   return entries.filter(e => (e.savedAt || new Date(e.date + 'T12:00:00').getTime()) >= cutoff);
+}
+
+function renderPrintSummaryLabel() {
+  const scopeEl = document.getElementById('pr-sum-scope');
+  const fmtEl   = document.getElementById('pr-sum-format');
+  const optsEl  = document.getElementById('pr-sum-opts');
+  if (!scopeEl) return;
+
+  // Line 1: Scope – Time
+  let scopePart;
+  if (!printScope) {
+    scopePart = 'All Entries';
+  } else if (printSymId) {
+    const sym = state.symptoms.find(s => s.id === printSymId);
+    scopePart = sym ? `${printScope} – ${sym.name}` : printScope;
+  } else {
+    scopePart = `${printScope} – All Entries`;
+  }
+  const tl = printAllTimeFilter === 'all' ? 'All time'
+    : printAllTimeFilter === '7d'  ? 'Last 7 days'
+    : printAllTimeFilter === '30d' ? 'Last 30 days'
+    : printAllTimeFilter === '90d' ? 'Last 90 days'
+    : (printAllTimeFilter === 'custom' && printAllCustomStart)
+      ? `${calFmt(printAllCustomStart)} – ${calFmt(printAllCustomEnd)}`
+      : 'All time';
+  scopeEl.textContent = `${scopePart} – ${tl}`;
+
+  // Line 2: Format – Sort – Grouping
+  if (printAllMode === 'text') {
+    const sort  = printSortOrder === 'newest' ? 'Newest' : 'Oldest';
+    const group = printGroupBy === 'symptom' ? 'Symptom' : 'Date';
+    fmtEl.textContent = `Text format – ${sort} first – Grouped by ${group}`;
+  } else {
+    fmtEl.textContent = 'Chart format';
+  }
+
+  // Line 3: Trend – Care events
+  const trendStr = `${printAllTrend ? 'Show' : 'Do not show'} trend`;
+  const careStr  = `${printAllCare  ? 'Show' : 'Do not show'} care events`;
+  optsEl.textContent = `${trendStr} – ${careStr}`;
 }
 
 function setPrintScope(cat) {
@@ -3746,6 +3810,7 @@ function setPrintScope(cat) {
 function setPrintSymFilter(val) {
   printSymId = val;
   updatePrintToggle();
+  renderPrintSummaryLabel();
 }
 
 function updatePrintToggle() {
@@ -3793,6 +3858,7 @@ function updatePrintToggle() {
     if (l) l.className = 's-left '  + (printGroupBy === 'symptom' ? 's-active' : 's-dim');
     if (r) r.className = 's-right ' + (printGroupBy === 'period'  ? 's-active' : 's-dim');
   }
+  renderPrintSummaryLabel();
 }
 
 function togglePrintMode() {
@@ -3817,6 +3883,7 @@ function refreshPrintScope() {
   if (catSel) catSel.value = printScope;
   if (symSel) symSel.value = printSymId;
   updatePrintToggle();
+  renderPrintSummaryLabel();
 }
 
 function setPrintAllMode(mode) {
@@ -3849,6 +3916,7 @@ function renderPrintAllTimeChips() {
     }
     lbl.textContent = `${calFmt(s)} → ${calFmt(e)}`;
   } else if (lbl) { lbl.remove(); }
+  renderPrintSummaryLabel();
 }
 
 function initPrintAllChips() {
