@@ -1195,8 +1195,8 @@ let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
-const APP_VERSION = 'v41';
-const APP_BUILD_DATE = 'Jul 14, 2026 9:15 PM CDT'; // update on every deploy
+const APP_VERSION = 'v43';
+const APP_BUILD_DATE = 'Jul 14, 2026 10:13 PM CDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1672,6 +1672,7 @@ function updateDateLabel() {
     : d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
 }
 function shiftDate(n) {
+  if (editingEntryId) return; // locked during single-entry edit
   const d = new Date(currentDate + 'T12:00:00');
   d.setDate(d.getDate() + n);
   currentDate = d.toISOString().slice(0,10);
@@ -1679,11 +1680,13 @@ function shiftDate(n) {
   openCarousel();
 }
 function goToday() {
+  if (editingEntryId) return; // locked during single-entry edit
   currentDate = todayStr();
   updateDateLabel();
   openCarousel();
 }
 function setPeriod(p) {
+  if (editingEntryId) return; // locked during single-entry edit
   currentPeriod = p;
   document.querySelectorAll('.pchip').forEach(b => b.classList.toggle('active', b.dataset.p === p));
   openCarousel();
@@ -1724,7 +1727,7 @@ function openCarousel() {
 
   currentStep = 0;
   const logTop = document.getElementById('log-top');
-  if (logTop) logTop.style.display = '';
+  if (logTop) logTop.style.display = editingEntryId ? 'none' : '';
   renderCarousel();
 }
 
@@ -1796,7 +1799,10 @@ function doSwitchScreen(name) {
 function getPrev(symId) {
   // look at previous period entries for context
   const all = state.entries.filter(e => e.symptomId === symId)
-    .sort((a,b) => (b.date+b.period).localeCompare(a.date+a.period));
+    .sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date); // date desc
+      return (PERIOD_ORDER[b.period] ?? 0) - (PERIOD_ORDER[a.period] ?? 0); // then period desc, chronologically
+    });
   // exclude current date+period
   const prev = all.find(e => !(e.date === currentDate && e.period === currentPeriod));
   return prev || null;
@@ -2256,7 +2262,9 @@ function summaryDiscard() {
 function doneSummary() {
   persist();
   cancelConfirmMode = false;
-  openCarousel(); // re-opens carousel pre-populated with saved entries, clean session state
+  draft = {}; currentStep = 0; sessionSnapshot = null; sessionDirty = false;
+  histCatFilter = ''; histSymFilter = ''; histViewMode = 'text'; // default History view
+  doSwitchScreen('history');
 }
 
 function renderSummary() {
@@ -3859,6 +3867,7 @@ function setPrintSymFilter(val) {
 
 function updatePrintToggle() {
   const isCE  = printScope === 'Care Events';
+  const isOcc = printScope === 'Occurrences';
   const canChart = !isCE;
 
   // Force text if scope can't be charted
@@ -3867,10 +3876,10 @@ function updatePrintToggle() {
   // Force care on when CE scope
   if (isCE) printAllCare = true;
 
-  // Trend / Care buttons
+  // Trend / Care buttons (Trend disabled for Occurrences — no trend data to plot)
   const tTrend = document.getElementById('pa-hvb-trend');
   const tCare  = document.getElementById('pa-hvb-care');
-  if (tTrend) tTrend.className = 'hvb' + (printAllTrend ? ' hvb-on' : '');
+  if (tTrend) tTrend.className = 'hvb' + (isOcc ? ' hvb-disabled' : (printAllTrend ? ' hvb-on' : ''));
   if (tCare)  tCare.className  = 'hvb' + (printAllCare ? ' hvb-on' : '') + (isCE ? ' hvb-disabled' : '');
 
   // Split button 1: Text / Chart
@@ -3938,6 +3947,7 @@ function setPrintAllMode(mode) {
 }
 
 function togglePrintAllTrend() {
+  if (printScope === 'Occurrences') return;
   printAllTrend = !printAllTrend;
   updatePrintToggle();
 }
