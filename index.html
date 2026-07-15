@@ -788,6 +788,7 @@ nav {
 .summary-prior-when { font-size: 12px; color: var(--subtext); padding-left: 12px; white-space: nowrap; }
 .summary-badge-cell { display: flex; justify-content: flex-end; }
 .summary-spacer  { grid-column: 1 / -1; height: 6px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
+.summary-note    { grid-column: 1 / -1; font-size: 12px; font-style: italic; color: var(--subtext); padding-left: 12px; margin-top: -2px; }
 #toast {
   position: fixed; bottom: calc(var(--nav-h) + 14px); left: 50%;
   transform: translateX(-50%) translateY(10px);
@@ -1194,8 +1195,8 @@ let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
-const APP_VERSION = 'v37';
-const APP_BUILD_DATE = 'Jul 6, 2026 8:11 PM EDT'; // update on every deploy
+const APP_VERSION = 'v41';
+const APP_BUILD_DATE = 'Jul 14, 2026 9:15 PM CDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -2286,7 +2287,7 @@ function renderSummary() {
 
   let cells = '';
   let first = true;
-  state.symptoms.forEach(sym => {
+  getSortedSymptoms().forEach(sym => {
     const symEntries = savedEntries.filter(e => e.symptomId === sym.id);
     if (!symEntries.length) return;
     const now = symEntries[0];
@@ -2297,6 +2298,9 @@ function renderSummary() {
     cells += `<div class="summary-sym">${escapeHtml(sym.name)}</div>
               <div class="summary-badge-cell">${trendBadge(now)}</div>
               <div class="summary-badge-cell">${absBadge(now)}</div>`;
+    if (now.notes) {
+      cells += `<div class="summary-note">${escapeHtml(now.notes)}</div>`;
+    }
     // Prior row — only if prior exists
     if (prev) {
       const ps = periodShort[prev.period] || prev.period;
@@ -2305,6 +2309,9 @@ function renderSummary() {
       cells += `<div class="summary-prior-when">Prev: ${when}</div>
                 <div class="summary-badge-cell">${trendBadge(prev)}</div>
                 <div class="summary-badge-cell">${absBadge(prev)}</div>`;
+      if (prev.notes) {
+        cells += `<div class="summary-note">${escapeHtml(prev.notes)}</div>`;
+      }
     }
   });
 
@@ -2461,12 +2468,19 @@ function setHistMode(mode) {
   updateHistViewToggle();
   renderHistoryBody();
 }
-function toggleHistTrend() { showTrend = !showTrend; updateHistViewToggle(); renderHistoryBody(); }
+function toggleHistTrend() {
+  const selSym = histSymFilter ? state.symptoms.find(s => s.id === histSymFilter) : null;
+  const isOcc = (selSym && selSym.category === 'Occurrences') || histCatFilter === 'Occurrences';
+  if (isOcc) return;
+  showTrend = !showTrend; updateHistViewToggle(); renderHistoryBody();
+}
 function toggleHistCare()  { showCareEvents = !showCareEvents; updateHistViewToggle(); renderHistoryBody(); }
 
 function updateHistViewToggle() {
   const hasSym = !!histSymFilter;
   const isCE   = histCatFilter === 'Care Events';
+  const selSym = histSymFilter ? state.symptoms.find(s => s.id === histSymFilter) : null;
+  const isOcc  = (selSym && selSym.category === 'Occurrences') || histCatFilter === 'Occurrences';
   const tText  = document.getElementById('hvb-text');
   const tGraph = document.getElementById('hvb-graph');
   const tTrend = document.getElementById('hvb-trend');
@@ -2475,7 +2489,7 @@ function updateHistViewToggle() {
   // Text is always active; Chart greyed unless symptom or care events selected
   tText.className  = 'hvb' + (histViewMode === 'text'  ? ' hvb-active' : '');
   tGraph.className = 'hvb' + (!hasSym && !isCE ? ' hvb-disabled' : histViewMode === 'graph' ? ' hvb-active' : '');
-  tTrend.className = 'hvb' + (showTrend      ? ' hvb-on' : '');
+  tTrend.className = 'hvb' + (isOcc ? ' hvb-disabled' : (showTrend ? ' hvb-on' : ''));
   tCare.className  = 'hvb' + (showCareEvents ? ' hvb-on' : '');
   // Context label
   const ctx = document.getElementById('hist-context-label');
@@ -2796,11 +2810,48 @@ function getChartData(symId, filterFn) {
   const cat = sym.category || 'General';
 
   if (cat === 'Occurrences') {
-    // Unchanged — scatter only, no line, no missing-slot inference, no calendar-grid spacing
-    const points = filterFn(state.entries.filter(e => e.symptomId === symId))
-      .map(e => ({ts: getPlotTs(e), y: e.occMode === 'none' ? 0 : 1, id: e.id, period: e.period, relative: null, missing: false}))
-      .sort((a, b) => a.ts - b.ts);
-    return {sym, cat, points, calendarGrid: false};
+    // Occurrences: discrete on/off events. Reuses the calendar-grid point model
+    // (date/slot/isAllDay) like General/Symptoms, but with no missing-slot
+    // carry-forward (a gap just means "not logged", not "unknown value") and
+    // no trend/relative values (there's nothing continuous to trend).
+    const entries = filterFn(state.entries.filter(e => e.symptomId === symId));
+    const byDate = {};
+    entries.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+    const dates = Object.keys(byDate).sort();
+    const occY = e => e.occMode === 'none' ? 1 : 1.5;
+
+    let points = [];
+    dates.forEach(date => {
+      const dayEntries = byDate[date];
+      const intraday = {morning: null, afternoon: null, evening: null};
+      let allDayEntry = null;
+      dayEntries.forEach(e => {
+        if (e.period === 'day') {
+          if (!allDayEntry || (e.savedAt||0) > (allDayEntry.savedAt||0)) allDayEntry = e;
+        } else if (e.period in intraday) {
+          if (!intraday[e.period] || (e.savedAt||0) > (intraday[e.period].savedAt||0)) intraday[e.period] = e;
+        }
+      });
+      const usesSubPeriod = !!(intraday.morning || intraday.afternoon || intraday.evening);
+      const allDayBucket = allDayEntry ? bucketAllDayPeriod(allDayEntry) : null;
+
+      if (!usesSubPeriod) {
+        if (allDayEntry) {
+          points.push({date, slot: allDayBucket, y: occY(allDayEntry), id: allDayEntry.id, isAllDay: true, missing: false, relative: null});
+        }
+        return;
+      }
+      ['morning', 'afternoon', 'evening'].forEach(slot => {
+        if (intraday[slot]) {
+          points.push({date, slot, y: occY(intraday[slot]), id: intraday[slot].id, isAllDay: false, missing: false, relative: null});
+        } else if (allDayEntry && allDayBucket === slot) {
+          points.push({date, slot, y: occY(allDayEntry), id: allDayEntry.id, isAllDay: true, missing: false, relative: null});
+        }
+        // No synthetic "missing" point — an unlogged slot just isn't plotted.
+      });
+    });
+    points.sort((a, b) => a.date === b.date ? SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] : a.date.localeCompare(b.date));
+    return {sym, cat, points, calendarGrid: true};
   }
 
   // General / Symptoms: reconcile all-day vs intraday entries per date, infer missing slots
@@ -3082,8 +3133,8 @@ function renderTrendGraph(symId, showTrend) {
     var sLabels = ['Sevr','Modr','Mild','None'];
     yLabelFn = function(v) { return sLabels[v + 3] !== undefined ? sLabels[v + 3] : String(v); };
   } else {
-    yMin = -1.0; yMax = 1; yTicks = [0,1];
-    yLabelFn = function(v) { return v === 0 ? 'None' : 'Occd'; };
+    yMin = 0; yMax = 1.75; yTicks = [1, 1.5];
+    yLabelFn = function(v) { return v === 1 ? 'None' : 'Occd'; };
   }
   const yp = v => mt + (1 - (v - yMin) / (yMax - yMin)) * ch;
   const col = cat === 'General' ? '#6c8eff' : cat === 'Symptoms' ? '#f0c040' : '#3ecf8e';
@@ -3176,7 +3227,7 @@ function renderTrendGraph(symId, showTrend) {
             <text x="${x}" y="${(mt+ch+16).toFixed(1)}" text-anchor="middle" fill="#8890b0" font-size="10" font-family="-apple-system,sans-serif">${lbl}</text>`;
   }).join('');
 
-  const path = points.length > 1
+  const path = (cat !== 'Occurrences' && points.length > 1)
     ? `<path d="${points.map((p,i) => i===0
         ? `M${xFor(p).toFixed(1)},${yp(p.y).toFixed(1)}`
         : `H${xFor(p).toFixed(1)} V${yp(p.y).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.75"/>`
@@ -3549,8 +3600,8 @@ function buildPrintGraphSVG(symId, showTrend, filterFn) {
     var sLabels = ['Sevr','Modr','Mild','None'];
     yLabelFn = v => sLabels[v + 3];
   } else {
-    yMin = -1.0; yMax = 1; yTicks = [0,1];
-    yLabelFn = v => v === 0 ? 'None' : 'Occd';
+    yMin = 0; yMax = 1.75; yTicks = [1, 1.5];
+    yLabelFn = v => v === 1 ? 'None' : 'Occd';
   }
   const yp = v => mt + (1 - (v - yMin) / (yMax - yMin)) * ch;
   const col = cat === 'General' ? '#2c4ec9' : cat === 'Symptoms' ? '#a8780a' : '#1d8a52';
@@ -3610,7 +3661,7 @@ function buildPrintGraphSVG(symId, showTrend, filterFn) {
             <text x="${x}" y="${(mt+ch+18).toFixed(1)}" text-anchor="middle" fill="#444" font-size="11">${lbl}</text>`;
   }).join('');
 
-  const path = points.length > 1
+  const path = (cat !== 'Occurrences' && points.length > 1)
     ? `<path d="${points.map((p,i) => i===0
         ? `M${xFor(p).toFixed(1)},${yp(p.y).toFixed(1)}`
         : `H${xFor(p).toFixed(1)} V${yp(p.y).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`
@@ -3708,7 +3759,7 @@ function triggerPrintAll() {
     bodyHtml = buildPrintGroupedBody(entries, careEvts, printAllTrend, printSortOrder === 'newest', printGroupBy);
   } else {
     // Chart mode — all chartable symptoms in scope
-    const cats = printScope ? [printScope] : ['General', 'Symptoms'];
+    const cats = printScope ? [printScope] : ['General', 'Symptoms', 'Occurrences'];
     if (printSymId) {
       // Single symptom chart
       const sym = state.symptoms.find(s => s.id === printSymId);
@@ -3774,7 +3825,7 @@ function renderPrintSummaryLabel() {
     const group = printGroupBy === 'symptom' ? 'Symptom' : 'Date';
     fmtEl.textContent = 'Text format \u2013 ' + sort + ' first \u2013 Grouped by ' + group;
   } else {
-    fmtEl.textContent = 'Chart format';
+    fmtEl.textContent = 'Chart format \u2013 Chronological \u2013 Grouped by Category';
   }
   optsEl.textContent = (printAllTrend ? 'Show' : 'Do not show') + ' trend \u2013 '
     + (printAllCare ? 'Show' : 'Do not show') + ' care events';
@@ -3808,8 +3859,7 @@ function setPrintSymFilter(val) {
 
 function updatePrintToggle() {
   const isCE  = printScope === 'Care Events';
-  const isOcc = printScope === 'Occurrences';
-  const canChart = !isCE && !isOcc;
+  const canChart = !isCE;
 
   // Force text if scope can't be charted
   if (!canChart && printAllMode === 'graph') printAllMode = 'text';
@@ -3843,13 +3893,15 @@ function updatePrintToggle() {
     if (r) r.className = 's-right ' + (dis || printSortOrder === 'oldest' ? (dis ? 's-dim' : 's-active') : 's-dim');
   }
 
-  // Split button 3: Symptom / Period
+  // Split button 3: Symptom / Period (disabled in chart mode — charts are always grouped by category)
   const groupBtn = document.getElementById('pa-hvb-group');
   if (groupBtn) {
+    const disG = printAllMode !== 'text';
+    groupBtn.className = 'hvb split-btn' + (disG ? ' hvb-disabled' : '');
     const l = groupBtn.querySelector('.s-left');
     const r = groupBtn.querySelector('.s-right');
-    if (l) l.className = 's-left '  + (printGroupBy === 'symptom' ? 's-active' : 's-dim');
-    if (r) r.className = 's-right ' + (printGroupBy === 'period'  ? 's-active' : 's-dim');
+    if (l) l.className = 's-left '  + (disG || printGroupBy === 'symptom' ? (disG ? 's-dim' : 's-active') : 's-dim');
+    if (r) r.className = 's-right ' + (disG || printGroupBy === 'period'  ? (disG ? 's-dim' : 's-active') : 's-dim');
   }
   renderPrintSummaryLabel();
 }
@@ -3866,6 +3918,7 @@ function togglePrintSort() {
 }
 
 function togglePrintGroupBy() {
+  if (printAllMode !== 'text') return;
   printGroupBy = printGroupBy === 'symptom' ? 'period' : 'symptom';
   updatePrintToggle();
 }
