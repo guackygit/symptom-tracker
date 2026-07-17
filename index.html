@@ -291,6 +291,8 @@ nav {
 .tl-sym-name { flex: 1; }
 .tl-sym-row.tappable { cursor: pointer; transition: opacity .15s; border-radius: 8px; }
 .tl-sym-row.tappable:active { opacity: 0.6; }
+.ce-row.tappable { cursor: pointer; transition: opacity .15s; border-radius: 8px; }
+.ce-row.tappable:active { opacity: 0.6; }
 
 /* Session pill — used by the Timeline view to visually group one Date+Period session */
 .session-pill {
@@ -1249,7 +1251,7 @@ let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
 const APP_VERSION = 'v44';
-const APP_BUILD_DATE = 'Jul 17, 2026 12:51 AM EDT'; // update on every deploy
+const APP_BUILD_DATE = 'Jul 17, 2026 4:09 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1272,7 +1274,7 @@ let armedCETypeDeleteTimer = null;
 let armedCEDeleteId = null;
 let armedCEDeleteTimer = null;
 let currentDate = todayStr();
-let currentPeriod = 'day';
+let currentPeriod = defaultPeriodForNow();
 let currentStep = 0;
 let draft = {};
 let sessionSnapshot = null;   // { preSessionEntries: [] }
@@ -1324,6 +1326,8 @@ let pendingImportRows = null; // holds parsed CSV rows while user chooses Replac
 
 // Edit/delete state
 let editingEntryId = null;
+let editingCareEventId = null;
+let careEventPendingDelete = false;
 let editingSymId   = null;
 let pendingDelete  = false;
 let cancelConfirmMode = false;
@@ -1400,6 +1404,16 @@ function getPlotTs(e) {
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// Picks the intraday period matching the current wall-clock time, for defaulting a fresh
+// carousel session. Only used to set the *initial* currentPeriod at app load — once the
+// user explicitly picks a period (via setPeriod), that choice is respected for the rest
+// of the session and is never silently overridden by this.
+function defaultPeriodForNow() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'morning';
+  if (h >= 12 && h < 17) return 'afternoon';
+  return 'evening'; // 5pm–4:59am
 }
 
 // ══ Persist (profile-aware) ══
@@ -1686,6 +1700,7 @@ function currentEntryHasData() {
 
 function switchScreen(name) {
   if (editingEntryId && name !== 'log') discardEditMode();
+  if (editingCareEventId && name !== 'events') discardCareEditMode();
   const logActive = document.getElementById('log-screen') && document.getElementById('log-screen').classList.contains('active');
   if (name !== 'log' && logActive && sessionSnapshot) {
     // Save current step if it has unsaved data before deciding whether to prompt
@@ -1750,6 +1765,8 @@ function setPeriod(p) {
 // ══ Session management ══
 
 function openCarousel() {
+  document.querySelectorAll('.pchip').forEach(b => b.classList.toggle('active', b.dataset.p === currentPeriod));
+
   // Snapshot pre-session state for this date+period
   sessionSnapshot = {
     preSessionEntries: state.entries
@@ -1925,12 +1942,16 @@ function renderCarousel() {
 
     const noneActive = occMode === 'none';
     const addActive  = occMode === 'entries';
+    const anyModeActive = noneActive || addActive;
 
-    // Mode selector buttons
+    // Mode selector buttons. A dedicated Clear button (same trash icon used to remove
+    // individual occurrences) appears whenever a mode is active, giving a single
+    // consistent way to back out of either mode — rather than overloading either
+    // primary button with a second, less-discoverable "tap again to undo" meaning.
     const controls = `
       <div class="occ-controls">
         <button class="occ-btn ${noneActive ? 'occ-none-active' : ''} ${addActive ? 'occ-disabled' : ''}"
-          onclick="setOccMode('${sym.id}', ${noneActive ? 'null' : "'none'"})">
+          onclick="setOccMode('${sym.id}', 'none')">
           <span class="occ-icon">${noneActive ? '✓' : '—'}</span>
           None this period
         </button>
@@ -1939,6 +1960,7 @@ function renderCarousel() {
           <span class="occ-icon">+</span>
           Add occurrence
         </button>
+        ${anyModeActive ? `<button class="occ-remove-btn" style="align-self:center" onclick="clearOccMode('${sym.id}')" aria-label="Clear selection">${TRASH_ICON}</button>` : ''}
       </div>`;
 
     // "None" mode: just a note field
@@ -2204,6 +2226,10 @@ function setOccMode(symId, mode) {
   if (!draft[symId]) draft[symId] = {};
   draft[symId].mode = mode;
   if (mode === 'entries' && !draft[symId].entries) draft[symId].entries = [];
+  renderCarousel();
+}
+function clearOccMode(symId) {
+  draft[symId] = {};
   renderCarousel();
 }
 function addOccEntry(symId) {
@@ -2676,6 +2702,15 @@ function renderEntryRow(e) {
     </div>`;
 }
 
+// Sorts period keys ('day'/'morning'/'afternoon'/'evening') per the current histSortOrder,
+// so the direction within a day matches the direction across days.
+function sortHistPeriods(periods) {
+  return periods.sort((a,b) => {
+    const diff = (PERIOD_ORDER[a]||0) - (PERIOD_ORDER[b]||0);
+    return histSortOrder === 'oldest' ? diff : -diff;
+  });
+}
+
 // Sorts an array of 'YYYY-MM-DD' date strings per the current histSortOrder setting
 function sortHistDates(dates) {
   return dates.sort((a,b) => histSortOrder === 'oldest' ? a.localeCompare(b) : b.localeCompare(a));
@@ -2685,7 +2720,7 @@ function sortHistDates(dates) {
 function renderCarePill(events) {
   if (!events || !events.length) return '';
   const rows = events.map(e =>
-    `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
+    `<div class="ce-row tappable" data-care-id="${e.id}"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
   ).join('');
   return `<div class="session-pill care-pill"><div class="session-pill-period">Care Events</div>${rows}</div>`;
 }
@@ -2706,7 +2741,7 @@ function renderCareEventsHistory() {
     const dateStr = date === todayStr() ? 'Today'
       : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
     const rows = byDate[date].map(e => `
-      <div class="ce-row">
+      <div class="ce-row tappable" data-care-id="${e.id}">
         <span class="ce-icon">${CE_ICON[e.category]||''}</span>
         <span class="ce-name">${escapeHtml(e.typeName)}</span>
         <span style="color:var(--subtext);font-size:12px">${e.category}</span>
@@ -2714,6 +2749,11 @@ function renderCareEventsHistory() {
       ${e.notes ? `<div class="ce-notes">${escapeHtml(e.notes)}</div>` : ''}`).join('');
     return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${rows}</div>`;
   }).join('');
+
+  body.onclick = function(ev) {
+    const row = ev.target.closest('.ce-row.tappable');
+    if (row) startEditCareEvent(row.dataset.careId);
+  };
 }
 
 // Date-first timeline: Date → Category → Period → Entries
@@ -2747,7 +2787,7 @@ function renderDateFirstTimeline(entries) {
 
     const catsHtml = CATEGORIES.map((cat) => {
       if (!byDate[date] || !byDate[date][cat]) return '';
-      const periods = Object.keys(byDate[date][cat]).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
+      const periods = sortHistPeriods(Object.keys(byDate[date][cat]));
       const periodsHtml = periods.map(p => {
         const items = byDate[date][cat][p];
         return `<div class="session-pill-period">${periodName[p] || p}</div>
@@ -2787,7 +2827,7 @@ function renderTimelineSessions(entries, pinnedCategory) {
 
     const careForDate = renderCarePill(careByDate[date]);
 
-    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
+    const periods = sortHistPeriods(Object.keys(byDate[date] || {}));
     const pillsHtml = periods.map(p => {
       const items = byDate[date][p];
       let bodyHtml;
@@ -2818,10 +2858,11 @@ function renderGroupedHistory(catFilter) {
     ? state.entries.filter(e => (e.category || 'General') === catFilter)
     : state.entries;
   const entries = getTimeFilteredEntries(catEntries);
+  const careEventsInRange = showCareEvents ? getTimeFilteredEntries(state.careEvents) : [];
 
   const timeLabel = histTimeFilter === 'all' ? '' : ' in the last ' + (histTimeFilter === '7d' ? '7 days' : histTimeFilter === '30d' ? '30 days' : '90 days');
 
-  if (!entries.length) {
+  if (!entries.length && !careEventsInRange.length) {
     body.innerHTML = `<div class="empty-state" style="padding-top:60px">
       <div class="empty-icon">📈</div>
       <h3>${catFilter ? 'No ' + catFilter + ' entries' : 'Nothing logged'}${timeLabel}</h3>
@@ -2838,6 +2879,8 @@ function renderGroupedHistory(catFilter) {
   }
 
   body.onclick = function(ev) {
+    const careRow = ev.target.closest('.ce-row.tappable');
+    if (careRow) { startEditCareEvent(careRow.dataset.careId); return; }
     const row = ev.target.closest('.tl-sym-row.tappable');
     if (row) startEditEntry(row.dataset.entryId);
   };
@@ -4126,7 +4169,7 @@ function renderFilteredHistory(symId) {
 
     const careForDate = renderCarePill(careByDate[date]);
 
-    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
+    const periods = sortHistPeriods(Object.keys(byDate[date] || {}));
     const pillsHtml = periods.map(p => {
       const items = byDate[date][p];
       return `<div class="session-pill">
@@ -4139,6 +4182,8 @@ function renderFilteredHistory(symId) {
   }).join('');
 
   body.onclick = function(ev) {
+    const careRow = ev.target.closest('.ce-row.tappable');
+    if (careRow) { startEditCareEvent(careRow.dataset.careId); return; }
     const row = ev.target.closest('.tl-sym-row.tappable');
     if (row) startEditEntry(row.dataset.entryId);
   };
@@ -4430,11 +4475,95 @@ function logCareEvent() {
 }
 
 function renderEventsScreen() {
+  if (editingCareEventId) { renderCareEventEditForm(); return; }
   currentEventDate = todayStr();
   selectedEventCat = null;
   selectedCETypeId = null;
   updateEventDateLabel();
   renderEventTypePicker();
+}
+
+// ══ Care Event editing (Notes only; category/type/date are locked once logged) ══
+function startEditCareEvent(idStr) {
+  const event = state.careEvents.find(e => String(e.id) === String(idStr));
+  if (!event) return;
+  editingCareEventId = event.id;
+  careEventPendingDelete = false;
+  switchScreen('events');
+}
+
+function discardCareEditMode() {
+  editingCareEventId = null;
+  careEventPendingDelete = false;
+}
+
+function renderCareEventEditForm() {
+  const el = document.getElementById('event-picker-area');
+  if (!el) return;
+  const e = state.careEvents.find(ev => ev.id === editingCareEventId);
+  if (!e) { discardCareEditMode(); renderEventsScreen(); return; }
+
+  if (careEventPendingDelete) {
+    el.innerHTML = `
+      <div class="delete-notice">
+        <div class="dn-icon">🗑️</div>
+        <div class="dn-title">This care event will be deleted</div>
+        <div class="dn-sub">Tap Save changes to confirm, or Undo to keep it.</div>
+      </div>
+      <div class="carousel-footer">
+        <button class="cf-btn cf-undo" onclick="undoCareEventDelete()">Undo</button>
+        <button class="cf-btn cf-save" onclick="saveCareEventEdit()">Save changes ✓</button>
+      </div>`;
+    return;
+  }
+
+  const d = new Date(e.date + 'T12:00:00');
+  const dateStr = d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+  el.innerHTML = `
+    <div class="choice-label">Editing Care Event</div>
+    <div style="display:flex;align-items:center;gap:10px;margin:8px 0 18px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card)">
+      <span style="color:var(--accent);font-size:20px">${CE_ICON[e.category]||''}</span>
+      <div>
+        <div style="font-weight:700;font-size:15px">${escapeHtml(e.typeName)}</div>
+        <div style="font-size:12px;color:var(--subtext)">${e.category} · ${dateStr}</div>
+      </div>
+    </div>
+    <div class="choice-label">Notes</div>
+    <textarea class="event-notes-input" id="care-edit-notes" placeholder="Notes (optional)…">${escapeHtml(e.notes || '')}</textarea>
+    <div class="carousel-footer">
+      <button class="cf-btn cf-delete" style="flex:0 0 auto;padding:0 14px" onclick="markCareEventPendingDelete()">Delete</button>
+      <button class="cf-btn cf-save" onclick="saveCareEventEdit()">Save changes ✓</button>
+      <button class="cf-btn cf-cancel" onclick="cancelCareEventEdit()">✕</button>
+    </div>`;
+}
+
+function markCareEventPendingDelete() { careEventPendingDelete = true;  renderCareEventEditForm(); }
+function undoCareEventDelete()        { careEventPendingDelete = false; renderCareEventEditForm(); }
+
+function cancelCareEventEdit() {
+  discardCareEditMode();
+  renderEventsScreen();
+}
+
+function saveCareEventEdit() {
+  const e = state.careEvents.find(ev => ev.id === editingCareEventId);
+  if (!e) { discardCareEditMode(); renderEventsScreen(); return; }
+
+  if (careEventPendingDelete) {
+    state.careEvents = state.careEvents.filter(ev => ev.id !== editingCareEventId);
+    persist();
+    discardCareEditMode();
+    renderEventsScreen();
+    toast('Care event deleted');
+    return;
+  }
+
+  const notesEl = document.getElementById('care-edit-notes');
+  e.notes = notesEl ? (notesEl.value.trim() || null) : e.notes;
+  persist();
+  discardCareEditMode();
+  renderEventsScreen();
+  toast('Care event updated');
 }
 
 
