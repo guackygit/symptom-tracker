@@ -289,6 +289,28 @@ nav {
 .tl-symptoms { display: flex; flex-direction: column; gap: 4px; }
 .tl-sym-row { display: flex; align-items: center; gap: 7px; font-size: 14px; }
 .tl-sym-name { flex: 1; }
+.tl-sym-row.tappable { cursor: pointer; transition: opacity .15s; border-radius: 8px; }
+.tl-sym-row.tappable:active { opacity: 0.6; }
+
+/* Session pill — used by the Timeline view to visually group one Date+Period session */
+.session-pill {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 14px; margin-bottom: 10px;
+}
+.session-pill-period { font-size: 12px; color: var(--subtext); font-weight: 600; margin-bottom: 8px; }
+.session-pill-cat {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--accent); margin: 10px 0 6px;
+}
+.session-pill-cat:first-of-type { margin-top: 0; }
+
+/* TEMP (Step 1 only): Timeline/Category view toggle — replaced by the real Tier-1 control in Step 3 */
+.hist-group-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+.hgt-btn {
+  flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.hgt-btn.hgt-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 
 /* EXPERIMENTAL (v11b): column-aligned trend/status pills */
 .tl-row-grid {
@@ -920,6 +942,11 @@ nav {
         <option value="">Select a category first…</option>
       </select>
     </div>
+    <div class="hist-section-label">View (temp — Step 3 will replace this)</div>
+    <div class="hist-group-toggle">
+      <button class="hgt-btn hgt-active" id="hgt-timeline" onclick="setHistGroupMode('timeline')">Timeline</button>
+      <button class="hgt-btn" id="hgt-category" onclick="setHistGroupMode('category')">Category</button>
+    </div>
     <div class="hist-section-label">Display options</div>
     <div class="hist-display-group" style="margin-bottom:6px">
       <button class="time-chip time-chip-active" data-period="all">All</button>
@@ -1195,8 +1222,8 @@ let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
-const APP_VERSION = 'v43';
-const APP_BUILD_DATE = 'Jul 14, 2026 10:13 PM CDT'; // update on every deploy
+const APP_VERSION = 'v44';
+const APP_BUILD_DATE = 'Jul 16, 2026 5:39 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1250,6 +1277,7 @@ let histCatFilter = '';   // '' | 'General' | 'Symptoms' | 'Occurrences'
 let histSymFilter = '';   // '' | symId
 let histViewMode  = 'text'; // 'text' | 'graph' | 'trend'
 let histTimeFilter = 'all'; // 'all' | '7d' | '30d' | '90d'
+let histGroupMode = 'timeline'; // 'timeline' | 'category' — TEMP toggle for Step 1; real Tier-1 control comes in Step 3
 let selectedGraphPointId = null;
 let histCustomStart  = null, histCustomEnd  = null;
 let printAllCustomStart = null, printAllCustomEnd = null;
@@ -2468,6 +2496,18 @@ function updateTimeChips() {
     lbl.textContent = `${calFmt(s)} → ${calFmt(e)}`;
   } else if (lbl) { lbl.remove(); }
 }
+function setHistGroupMode(mode) {
+  histGroupMode = mode;
+  updateHistGroupToggle();
+  renderHistoryBody();
+}
+function updateHistGroupToggle() {
+  const tTimeline = document.getElementById('hgt-timeline');
+  const tCategory = document.getElementById('hgt-category');
+  if (!tTimeline || !tCategory) return;
+  tTimeline.className = 'hgt-btn' + (histGroupMode === 'timeline' ? ' hgt-active' : '');
+  tCategory.className = 'hgt-btn' + (histGroupMode === 'category' ? ' hgt-active' : '');
+}
 function setHistMode(mode) {
   const hasSym = !!histSymFilter;
   const isCE   = histCatFilter === 'Care Events';
@@ -2543,6 +2583,7 @@ function refreshSymSelect(syncUI) {
 function renderHistory() {
   refreshSymSelect(true);
   updateHistViewToggle();
+  updateHistGroupToggle();
   updateTimeChips();
   renderHistoryBody();
 }
@@ -2562,7 +2603,7 @@ function renderEntryRow(e) {
       ? `<span class="badge b-none">none</span>`
       : (e.time ? `<span class="badge b-none">${fmtTime(e.time)}</span>` : '');
     return `
-      <div class="tl-sym-row" style="flex-direction:column;align-items:flex-start">
+      <div class="tl-sym-row tappable" data-entry-id="${e.id}" style="flex-direction:column;align-items:flex-start">
         <div style="display:flex;align-items:center;gap:8px">
           <span class="tl-sym-name">${escapeHtml(e.symptomName)}</span>${inner}
         </div>
@@ -2571,7 +2612,7 @@ function renderEntryRow(e) {
   }
   const absLabel = FACE_LABEL[e.absolute] || e.absolute;
   return `
-    <div class="tl-sym-row" style="display:block">
+    <div class="tl-sym-row tappable" data-entry-id="${e.id}" style="display:block">
       <div class="tl-row-grid">
         <span class="tl-sym-name">${escapeHtml(e.symptomName)}</span>
         <span class="tl-badge-col">${(showTrend && e.relative) ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
@@ -2709,6 +2750,56 @@ function renderDateFirstTimeline(entries) {
   }).join('');
 }
 
+// Timeline view: Date → Period → [Category →] Symptom, one pill per Date+Period session.
+// pinnedCategory is set when a single category is selected (Category level is dropped from the grouping).
+function renderTimelineSessions(entries, pinnedCategory) {
+  const periodName = PERIOD_NAME_MAP;
+  const byDate = {};
+  entries.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = {};
+    if (!byDate[e.date][e.period]) byDate[e.date][e.period] = [];
+    byDate[e.date][e.period].push(e);
+  });
+  const careByDate = {};
+  if (showCareEvents) {
+    getTimeFilteredEntries(state.careEvents).forEach(e => {
+      (careByDate[e.date] = careByDate[e.date] || []).push(e);
+    });
+  }
+  const allDates = [...new Set([...Object.keys(byDate), ...Object.keys(careByDate)])];
+  return allDates.sort((a,b) => b.localeCompare(a)).map(date => {
+    const d = new Date(date + 'T12:00:00');
+    const dateStr = date === todayStr() ? 'Today'
+      : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+
+    const careForDate = (careByDate[date] || []).map(e =>
+      `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
+    ).join('');
+
+    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
+    const pillsHtml = periods.map(p => {
+      const items = byDate[date][p];
+      let bodyHtml;
+      if (pinnedCategory) {
+        // Category already pinned by the filter — just list symptoms, no sub-headers.
+        bodyHtml = `<div class="tl-symptoms">${items.map(renderEntryRow).join('')}</div>`;
+      } else {
+        // No category pinned — sub-group by category within this session.
+        bodyHtml = CATEGORIES.map(cat => {
+          const catItems = items.filter(e => (e.category || 'General') === cat);
+          if (!catItems.length) return '';
+          return `<div class="session-pill-cat">${cat}</div><div class="tl-symptoms">${catItems.map(renderEntryRow).join('')}</div>`;
+        }).join('');
+      }
+      return `<div class="session-pill">
+        <div class="session-pill-period">${periodName[p] || p}</div>
+        ${bodyHtml}
+      </div>`;
+    }).join('');
+    return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${careForDate}${pillsHtml}</div>`;
+  }).join('');
+}
+
 // All or category-filtered: grouped timeline view
 function renderGroupedHistory(catFilter) {
   const body = document.getElementById('history-body');
@@ -2728,11 +2819,18 @@ function renderGroupedHistory(catFilter) {
     return;
   }
 
-  if (catFilter) {
+  if (histGroupMode === 'timeline') {
+    body.innerHTML = renderTimelineSessions(entries, catFilter || null);
+  } else if (catFilter) {
     body.innerHTML = renderTimeline(entries);
   } else {
     body.innerHTML = renderDateFirstTimeline(entries);
   }
+
+  body.onclick = function(ev) {
+    const row = ev.target.closest('.tl-sym-row.tappable');
+    if (row) startEditEntry(row.dataset.entryId);
+  };
 }
 
 // ── Trend graph ──
@@ -3985,54 +4083,56 @@ function initPrintAllChips() {
   });
 }
 
+// Single-symptom view: Date → Period, one pill per session (symptom itself is already pinned by the filter).
 function renderFilteredHistory(symId) {
   const body = document.getElementById('history-body');
   const sym  = state.symptoms.find(s => s.id === symId);
   if (!sym) { body.innerHTML = ''; return; }
-  const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId))
-    .map(e => ({ ...e, _kind: 'sym' }));
-  const careEvts = showCareEvents
-    ? getTimeFilteredEntries(state.careEvents).map(e => ({ ...e, _kind: 'care' }))
-    : [];
-  const combined = [...entries, ...careEvts]
-    .sort((a,b) => (b.savedAt||0) - (a.savedAt||0) || b.date.localeCompare(a.date));
+  const entries = getTimeFilteredEntries(state.entries.filter(e => e.symptomId === symId));
   const timeLabel = histTimeFilter === 'all' ? '' : ' in the last ' + (histTimeFilter === '7d' ? '7 days' : histTimeFilter === '30d' ? '30 days' : '90 days');
-  if (!combined.length) {
+
+  const byDate = {};
+  entries.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = {};
+    (byDate[e.date][e.period] = byDate[e.date][e.period] || []).push(e);
+  });
+  const careByDate = {};
+  if (showCareEvents) {
+    getTimeFilteredEntries(state.careEvents).forEach(e => {
+      (careByDate[e.date] = careByDate[e.date] || []).push(e);
+    });
+  }
+  const allDates = [...new Set([...Object.keys(byDate), ...Object.keys(careByDate)])];
+
+  if (!allDates.length) {
     body.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--subtext);font-size:14px">No entries${timeLabel}. ${histTimeFilter !== 'all' ? 'Try a longer range.' : ''}</div>`;
     return;
   }
-  body.innerHTML = combined.map(e => {
-    if (e._kind === 'care') {
-      return `
-        <div class="hist-entry" style="border-left:3px solid #e63946">
-          <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}</div>
-          <div class="ce-row" style="padding:0;margin-top:2px">
-            <span class="ce-icon">${CE_ICON[e.category]||''}</span>
-            <span class="ce-name">${escapeHtml(e.typeName)}</span>
-            <span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span>
-          </div>
-          ${e.notes ? `<div class="ce-notes">${escapeHtml(e.notes)}</div>` : ''}
-        </div>`;
-    }
-    return `
-      <div class="hist-entry tappable" data-entry-id="${e.id}">
-        <div class="hist-entry-time">${fmtDateTime(e.savedAt, e.date)}${e.category !== 'Occurrences' ? ` <span class="hist-entry-period">· ${PERIOD_NAME_MAP[e.period] || e.period}</span>` : ''}</div>
-        ${e.category === 'Occurrences' ? `
-        <div class="hist-entry-badges">
-          ${e.occMode === 'none' ? '<span class="badge b-none">none this period</span>' : ''}
-          ${e.time && e.occMode !== 'none' ? `<span class="badge b-none">${fmtTime(e.time)}</span>` : ''}
-        </div>` : `
-        <div class="hist-badge-grid">
-          <span class="tl-badge-col">${(showTrend && e.relative) ? `<span class="badge b-${e.relative}">${e.relative.replace('-',' ')}</span>` : ''}</span>
-          <span class="tl-badge-col">${e.absolute ? `<span class="badge b-${e.absolute}">${FACE_LABEL[e.absolute]||e.absolute}</span>` : ''}</span>
-        </div>`}
-        ${e.notes ? `<div class="hist-entry-notes">${escapeHtml(e.notes)}</div>` : ''}
+
+  body.innerHTML = allDates.sort((a,b) => b.localeCompare(a)).map(date => {
+    const d = new Date(date + 'T12:00:00');
+    const dateStr = date === todayStr() ? 'Today'
+      : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+
+    const careForDate = (careByDate[date] || []).map(e =>
+      `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
+    ).join('');
+
+    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
+    const pillsHtml = periods.map(p => {
+      const items = byDate[date][p];
+      return `<div class="session-pill">
+        <div class="session-pill-period">${PERIOD_NAME_MAP[p] || p}</div>
+        <div class="tl-symptoms">${items.map(renderEntryRow).join('')}</div>
       </div>`;
+    }).join('');
+
+    return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${careForDate}${pillsHtml}</div>`;
   }).join('');
 
   body.onclick = function(ev) {
-    const card = ev.target.closest('.hist-entry.tappable');
-    if (card) startEditEntry(card.dataset.entryId);
+    const row = ev.target.closest('.tl-sym-row.tappable');
+    if (row) startEditEntry(row.dataset.entryId);
   };
 }
 
