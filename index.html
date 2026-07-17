@@ -306,22 +306,29 @@ nav {
 .session-pill-cat:first-of-type { margin-top: 0; }
 .care-pill { border-left: 3px solid #e63946; }
 
-/* TEMP (Step 1 only): Timeline/Category view toggle — replaced by the real Tier-1 control in Step 3 */
-.hist-group-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
-.hgt-btn {
-  flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer;
+.hist-controls-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.seg-group { flex: 1; min-width: 0; display: flex; gap: 2px; border: 1px solid var(--border); border-radius: 10px; padding: 2px; }
+.seg-btn {
+  flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: none; background: transparent;
+  color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
 }
-.hgt-btn.hgt-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
-
-.hist-controls-row { display: flex; gap: 6px; align-items: stretch; margin-bottom: 10px; }
-.hist-controls-row .hgt-btn, .hist-controls-row .hvb { flex: 1; }
-.gearbox-btn.hvb-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.seg-btn.seg-active { background: var(--accent-bg); color: var(--accent); }
+.seg-btn.seg-disabled { opacity: .35; pointer-events: none; }
+.gear-icon-btn {
+  flex-shrink: 0; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid transparent; border-radius: 10px; color: var(--subtext); cursor: pointer;
+}
+.gear-icon-btn.gear-active { color: var(--accent); background: var(--accent-bg); border-color: var(--border); }
 .hvb-labeled { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 600; }
 
-.display-panel { max-height: 0; overflow: hidden; transition: max-height .25s ease, margin-bottom .25s ease; margin-bottom: 0; }
-.display-panel.open { margin-bottom: 14px; }
-.display-panel-inner { padding-top: 2px; }
+.display-panel {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .25s ease, margin-bottom .25s ease;
+  margin-bottom: 0;
+}
+.display-panel.open { grid-template-rows: 1fr; margin-bottom: 14px; }
+.display-panel-inner { overflow: hidden; min-height: 0; padding-top: 2px; }
 
 /* EXPERIMENTAL (v11b): column-aligned trend/status pills */
 .tl-row-grid {
@@ -604,7 +611,7 @@ nav {
 /* ── History view toggle (4 icon buttons) ── */
 .hist-view-row { display: flex; gap: 6px; margin-bottom: 12px; }
 .hvb {
-  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center;
   padding: 7px 4px; border-radius: 7px; border: 1px solid var(--border);
   background: var(--surface); color: var(--subtext); cursor: pointer; transition: all .15s;
 }
@@ -954,20 +961,25 @@ nav {
       </select>
     </div>
     <div class="hist-controls-row">
-      <button class="hgt-btn hgt-active" id="hgt-timeline" onclick="setHistGroupMode('timeline')">Timeline</button>
-      <button class="hgt-btn" id="hgt-category" onclick="setHistGroupMode('category')">Category</button>
-      <button class="hvb" id="hvb-text"  onclick="setHistMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-      <button class="hvb" id="hvb-graph" onclick="setHistMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
-      <button class="hvb gearbox-btn" id="gearbox-btn" onclick="toggleGearbox()" aria-label="Display options">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <div class="seg-group">
+        <button class="seg-btn seg-active" id="hgt-timeline" onclick="setHistGroupMode('timeline')">Timeline</button>
+        <button class="seg-btn" id="hgt-category" onclick="setHistGroupMode('category')">Category</button>
+      </div>
+      <div class="seg-group">
+        <button class="seg-btn" id="hvb-text"  onclick="setHistMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+        <button class="seg-btn" id="hvb-graph" onclick="setHistMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+      </div>
+      <button class="gear-icon-btn" id="gearbox-btn" onclick="toggleGearbox()" aria-label="Display options">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
     <div class="display-panel" id="display-panel">
       <div class="display-panel-inner">
-        <div class="hist-section-label" style="margin-top:0">Sort order</div>
-        <div class="hist-group-toggle">
-          <button class="hgt-btn hgt-active" id="sort-newest" onclick="setSortOrder('newest')">Newest first</button>
-          <button class="hgt-btn" id="sort-oldest" onclick="setSortOrder('oldest')">Oldest first</button>
+        <div class="hist-section-label" style="margin-top:0">Display Options</div>
+        <div class="hist-display-group">
+          <button class="hvb hvb-labeled" id="hist-sort-btn" onclick="toggleSortOrder()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10M11 9h7M11 13h4"/><path d="M4 5v14M4 19l-2.5-3M4 19l2.5-3"/></svg><span class="hvb-btn-label">Newest</span></button>
+          <button class="hvb hvb-on hvb-labeled" id="hvb-trend" onclick="toggleHistTrend()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="hvb-btn-label">Trend On</span></button>
+          <button class="hvb hvb-on hvb-labeled" id="hvb-care"  onclick="toggleHistCare()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="hvb-btn-label">Care On</span></button>
         </div>
         <div class="hist-section-label">Time range</div>
         <div class="hist-display-group" style="margin-bottom:10px">
@@ -976,10 +988,6 @@ nav {
           <button class="time-chip" data-period="30d">30d</button>
           <button class="time-chip" data-period="90d">90d</button>
           <button class="time-chip" data-period="custom" onclick="openCalendar('history')">Custom</button>
-        </div>
-        <div class="hist-display-group">
-          <button class="hvb hvb-on hvb-labeled" id="hvb-trend" onclick="toggleHistTrend()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Trend</button>
-          <button class="hvb hvb-on hvb-labeled" id="hvb-care"  onclick="toggleHistCare()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Care Events</button>
         </div>
       </div>
     </div>
@@ -1241,7 +1249,7 @@ let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
 const APP_VERSION = 'v44';
-const APP_BUILD_DATE = 'Jul 16, 2026 11:57 PM EDT'; // update on every deploy
+const APP_BUILD_DATE = 'Jul 17, 2026 12:51 AM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -2520,16 +2528,11 @@ function toggleGearbox() {
   const btn = document.getElementById('gearbox-btn');
   if (!panel) return;
   const willOpen = !panel.classList.contains('open');
-  if (willOpen) {
-    panel.classList.add('open');
-    panel.style.maxHeight = panel.scrollHeight + 'px';
-  } else {
-    panel.style.maxHeight = panel.scrollHeight + 'px'; // lock in current height first
-    void panel.offsetHeight; // force reflow so the browser registers the starting height
-    panel.style.maxHeight = '0px';
-    panel.classList.remove('open');
-  }
-  if (btn) btn.classList.toggle('hvb-active', willOpen);
+  panel.classList.toggle('open', willOpen);
+  if (btn) btn.classList.toggle('gear-active', willOpen);
+}
+function toggleSortOrder() {
+  setSortOrder(histSortOrder === 'newest' ? 'oldest' : 'newest');
 }
 function setSortOrder(order) {
   histSortOrder = order;
@@ -2545,8 +2548,8 @@ function updateHistGroupToggle() {
   const tTimeline = document.getElementById('hgt-timeline');
   const tCategory = document.getElementById('hgt-category');
   if (!tTimeline || !tCategory) return;
-  tTimeline.className = 'hgt-btn' + (histGroupMode === 'timeline' ? ' hgt-active' : '');
-  tCategory.className = 'hgt-btn' + (histGroupMode === 'category' ? ' hgt-active' : '');
+  tTimeline.className = 'seg-btn' + (histGroupMode === 'timeline' ? ' seg-active' : '');
+  tCategory.className = 'seg-btn' + (histGroupMode === 'category' ? ' seg-active' : '');
 }
 function setHistMode(mode) {
   const hasSym = !!histSymFilter;
@@ -2575,10 +2578,14 @@ function updateHistViewToggle() {
   const tCare  = document.getElementById('hvb-care');
   if (!tText) return;
   // Text is always active; Chart greyed unless symptom or care events selected
-  tText.className  = 'hvb' + (histViewMode === 'text'  ? ' hvb-active' : '');
-  tGraph.className = 'hvb' + (!hasSym && !isCE ? ' hvb-disabled' : histViewMode === 'graph' ? ' hvb-active' : '');
-  tTrend.className = 'hvb' + (isOcc ? ' hvb-disabled' : (showTrend ? ' hvb-on' : ''));
-  tCare.className  = 'hvb' + (showCareEvents ? ' hvb-on' : '');
+  tText.className  = 'seg-btn' + (histViewMode === 'text'  ? ' seg-active' : '');
+  tGraph.className = 'seg-btn' + (!hasSym && !isCE ? ' seg-disabled' : histViewMode === 'graph' ? ' seg-active' : '');
+  tTrend.className = 'hvb hvb-labeled' + (isOcc ? ' hvb-disabled' : (showTrend ? ' hvb-on' : ''));
+  const trendLbl = tTrend.querySelector('.hvb-btn-label');
+  if (trendLbl) trendLbl.textContent = 'Trend ' + (showTrend ? 'On' : 'Off');
+  tCare.className  = 'hvb hvb-labeled' + (showCareEvents ? ' hvb-on' : '');
+  const careLbl = tCare.querySelector('.hvb-btn-label');
+  if (careLbl) careLbl.textContent = 'Care ' + (showCareEvents ? 'On' : 'Off');
   // Context label
   const ctx = document.getElementById('hist-context-label');
   if (ctx) {
@@ -2629,10 +2636,10 @@ function renderHistory() {
   renderHistoryBody();
 }
 function setSortOrderUI() {
-  const tNewest = document.getElementById('sort-newest');
-  const tOldest = document.getElementById('sort-oldest');
-  if (tNewest) tNewest.className = 'hgt-btn' + (histSortOrder === 'newest' ? ' hgt-active' : '');
-  if (tOldest) tOldest.className = 'hgt-btn' + (histSortOrder === 'oldest' ? ' hgt-active' : '');
+  const btn = document.getElementById('hist-sort-btn');
+  if (!btn) return;
+  const lbl = btn.querySelector('.hvb-btn-label');
+  if (lbl) lbl.textContent = histSortOrder === 'oldest' ? 'Oldest' : 'Newest';
 }
 
 function renderHistoryBody() {
