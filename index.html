@@ -297,12 +297,14 @@ nav {
   background: var(--card); border: 1px solid var(--border); border-radius: 14px;
   padding: 12px 14px; margin-bottom: 10px;
 }
-.session-pill-period { font-size: 12px; color: var(--subtext); font-weight: 600; margin-bottom: 8px; }
+.session-pill-period { font-size: 12px; color: var(--subtext); font-weight: 600; margin-top: 14px; margin-bottom: 8px; }
+.session-pill-period:first-of-type { margin-top: 0; }
 .session-pill-cat {
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
   color: var(--accent); margin: 10px 0 6px;
 }
 .session-pill-cat:first-of-type { margin-top: 0; }
+.care-pill { border-left: 3px solid #e63946; }
 
 /* TEMP (Step 1 only): Timeline/Category view toggle — replaced by the real Tier-1 control in Step 3 */
 .hist-group-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
@@ -311,6 +313,17 @@ nav {
   background: var(--surface); color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer;
 }
 .hgt-btn.hgt-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+.hist-controls-row { display: flex; gap: 6px; align-items: stretch; margin-bottom: 10px; }
+.hist-mode-toggle { display: flex; gap: 6px; flex-shrink: 0; }
+.hist-mode-toggle .hvb { flex: 0 0 40px; }
+.gearbox-btn { flex: 0 0 40px; }
+.gearbox-btn.hvb-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.hvb-labeled { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 600; }
+
+.display-panel { max-height: 0; overflow: hidden; transition: max-height .25s ease, margin-bottom .25s ease; margin-bottom: 0; }
+.display-panel.open { max-height: 420px; margin-bottom: 14px; }
+.display-panel-inner { padding-top: 2px; }
 
 /* EXPERIMENTAL (v11b): column-aligned trend/status pills */
 .tl-row-grid {
@@ -942,27 +955,38 @@ nav {
         <option value="">Select a category first…</option>
       </select>
     </div>
-    <div class="hist-section-label">View (temp — Step 3 will replace this)</div>
-    <div class="hist-group-toggle">
-      <button class="hgt-btn hgt-active" id="hgt-timeline" onclick="setHistGroupMode('timeline')">Timeline</button>
-      <button class="hgt-btn" id="hgt-category" onclick="setHistGroupMode('category')">Category</button>
-    </div>
-    <div class="hist-section-label">Display options</div>
-    <div class="hist-display-group" style="margin-bottom:6px">
-      <button class="time-chip time-chip-active" data-period="all">All</button>
-      <button class="time-chip" data-period="7d">7d</button>
-      <button class="time-chip" data-period="30d">30d</button>
-      <button class="time-chip" data-period="90d">90d</button>
-      <button class="time-chip" data-period="custom" onclick="openCalendar('history')">Custom</button>
-    </div>
-    <div style="display:flex;gap:6px">
-      <div class="hist-display-group" style="flex:1">
+    <div class="hist-controls-row">
+      <div class="hist-group-toggle" style="flex:1;margin-bottom:0">
+        <button class="hgt-btn hgt-active" id="hgt-timeline" onclick="setHistGroupMode('timeline')">Timeline</button>
+        <button class="hgt-btn" id="hgt-category" onclick="setHistGroupMode('category')">Category</button>
+      </div>
+      <div class="hist-mode-toggle">
         <button class="hvb" id="hvb-text"  onclick="setHistMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
         <button class="hvb" id="hvb-graph" onclick="setHistMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
       </div>
-      <div class="hist-display-group" style="flex:1">
-        <button class="hvb hvb-on" id="hvb-trend" onclick="toggleHistTrend()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
-        <button class="hvb hvb-on" id="hvb-care"  onclick="toggleHistCare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+      <button class="hvb gearbox-btn" id="gearbox-btn" onclick="toggleGearbox()" aria-label="Display options">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+    <div class="display-panel" id="display-panel">
+      <div class="display-panel-inner">
+        <div class="hist-section-label" style="margin-top:0">Sort order</div>
+        <div class="hist-group-toggle">
+          <button class="hgt-btn hgt-active" id="sort-newest" onclick="setSortOrder('newest')">Newest first</button>
+          <button class="hgt-btn" id="sort-oldest" onclick="setSortOrder('oldest')">Oldest first</button>
+        </div>
+        <div class="hist-section-label">Time range</div>
+        <div class="hist-display-group" style="margin-bottom:10px">
+          <button class="time-chip time-chip-active" data-period="all">All</button>
+          <button class="time-chip" data-period="7d">7d</button>
+          <button class="time-chip" data-period="30d">30d</button>
+          <button class="time-chip" data-period="90d">90d</button>
+          <button class="time-chip" data-period="custom" onclick="openCalendar('history')">Custom</button>
+        </div>
+        <div class="hist-display-group">
+          <button class="hvb hvb-on hvb-labeled" id="hvb-trend" onclick="toggleHistTrend()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Trend</button>
+          <button class="hvb hvb-on hvb-labeled" id="hvb-care"  onclick="toggleHistCare()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Care Events</button>
+        </div>
       </div>
     </div>
     <div id="hist-context-label" class="hist-context-label"></div>
@@ -1223,7 +1247,7 @@ let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
 const APP_VERSION = 'v44';
-const APP_BUILD_DATE = 'Jul 16, 2026 5:39 PM EDT'; // update on every deploy
+const APP_BUILD_DATE = 'Jul 16, 2026 11:42 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1278,6 +1302,7 @@ let histSymFilter = '';   // '' | symId
 let histViewMode  = 'text'; // 'text' | 'graph' | 'trend'
 let histTimeFilter = 'all'; // 'all' | '7d' | '30d' | '90d'
 let histGroupMode = 'timeline'; // 'timeline' | 'category' — TEMP toggle for Step 1; real Tier-1 control comes in Step 3
+let histSortOrder = 'newest'; // 'newest' | 'oldest' — applies to date ordering across all History views
 let selectedGraphPointId = null;
 let histCustomStart  = null, histCustomEnd  = null;
 let printAllCustomStart = null, printAllCustomEnd = null;
@@ -2496,6 +2521,19 @@ function updateTimeChips() {
     lbl.textContent = `${calFmt(s)} → ${calFmt(e)}`;
   } else if (lbl) { lbl.remove(); }
 }
+function toggleGearbox() {
+  const panel = document.getElementById('display-panel');
+  const btn = document.getElementById('gearbox-btn');
+  if (!panel) return;
+  const nowOpen = !panel.classList.contains('open');
+  panel.classList.toggle('open', nowOpen);
+  if (btn) btn.classList.toggle('hvb-active', nowOpen);
+}
+function setSortOrder(order) {
+  histSortOrder = order;
+  setSortOrderUI();
+  renderHistoryBody();
+}
 function setHistGroupMode(mode) {
   histGroupMode = mode;
   updateHistGroupToggle();
@@ -2584,8 +2622,15 @@ function renderHistory() {
   refreshSymSelect(true);
   updateHistViewToggle();
   updateHistGroupToggle();
+  setSortOrderUI();
   updateTimeChips();
   renderHistoryBody();
+}
+function setSortOrderUI() {
+  const tNewest = document.getElementById('sort-newest');
+  const tOldest = document.getElementById('sort-oldest');
+  if (tNewest) tNewest.className = 'hgt-btn' + (histSortOrder === 'newest' ? ' hgt-active' : '');
+  if (tOldest) tOldest.className = 'hgt-btn' + (histSortOrder === 'oldest' ? ' hgt-active' : '');
 }
 
 function renderHistoryBody() {
@@ -2622,51 +2667,18 @@ function renderEntryRow(e) {
     </div>`;
 }
 
-// Renders date→period timeline groups for a flat list of entries (single category)
-function renderTimeline(entries) {
-  const periodName  = PERIOD_NAME_MAP;
-  const byDate = {};
-  entries.forEach(e => {
-    if (!byDate[e.date]) byDate[e.date] = {};
-    if (!byDate[e.date][e.period]) byDate[e.date][e.period] = [];
-    byDate[e.date][e.period].push(e);
-  });
-  const careByDate = {};
-  if (showCareEvents) {
-    getTimeFilteredEntries(state.careEvents).forEach(e => {
-      (careByDate[e.date] = careByDate[e.date] || []).push(e);
-    });
-  }
-  const allDates = [...new Set([...Object.keys(byDate), ...Object.keys(careByDate)])];
-  return allDates.sort((a,b) => b.localeCompare(a)).map(date => {
-    const d = new Date(date + 'T12:00:00');
-    const dateStr = date === todayStr() ? 'Today'
-      : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+// Sorts an array of 'YYYY-MM-DD' date strings per the current histSortOrder setting
+function sortHistDates(dates) {
+  return dates.sort((a,b) => histSortOrder === 'oldest' ? a.localeCompare(b) : b.localeCompare(a));
+}
 
-    const careForDate = (careByDate[date] || []).map(e =>
-      `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
-    ).join('');
-
-    const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
-    const periodsHtml = periods.map((p, pi) => {
-      const items = byDate[date][p];
-      const dotColor = items.some(e=>e.relative==='worse'||e.relative==='much-worse') ? 'var(--worse)'
-                     : items.some(e=>e.relative==='better'||e.relative==='much-better') ? 'var(--better)'
-                     : 'var(--same)';
-      return `
-        <div class="timeline-entry">
-          <div class="tl-left">
-            <div class="tl-dot" style="background:${dotColor}"></div>
-            ${pi < periods.length-1 ? '<div class="tl-line"></div>' : ''}
-          </div>
-          <div class="tl-content">
-            <div class="tl-period">${periodName[p] || p}</div>
-            <div class="tl-symptoms">${items.map(renderEntryRow).join('')}</div>
-          </div>
-        </div>`;
-    }).join('');
-    return `<div class="timeline-group"><div class="timeline-date">${dateStr}</div>${careForDate}${periodsHtml}</div>`;
-  }).join('');
+// Shared care-events pill (all of one day's care events grouped together, red left-edge band)
+function renderCarePill(events) {
+  if (!events || !events.length) return '';
+  const rows = events.map(e =>
+    `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
+  ).join('');
+  return `<div class="session-pill care-pill"><div class="session-pill-period">Care Events</div>${rows}</div>`;
 }
 
 function renderCareEventsHistory() {
@@ -2680,7 +2692,7 @@ function renderCareEventsHistory() {
   }
   const byDate = {};
   filtered.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
-  body.innerHTML = Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
+  body.innerHTML = sortHistDates(Object.keys(byDate)).map(date => {
     const d = new Date(date + 'T12:00:00');
     const dateStr = date === todayStr() ? 'Today'
       : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
@@ -2709,39 +2721,31 @@ function renderDateFirstTimeline(entries) {
     byDate[e.date][cat][e.period].push(e);
   });
 
-  return Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
+  const careByDate = {};
+  if (showCareEvents) {
+    getTimeFilteredEntries(state.careEvents).forEach(e => {
+      (careByDate[e.date] = careByDate[e.date] || []).push(e);
+    });
+  }
+  const allDates = [...new Set([...Object.keys(byDate), ...Object.keys(careByDate)])];
+
+  return sortHistDates(allDates).map(date => {
     const d = new Date(date + 'T12:00:00');
     const dateStr = date === todayStr() ? 'Today'
       : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
 
-    const careForDate = showCareEvents
-      ? (getTimeFilteredEntries(state.careEvents).filter(e => e.date === date)
-          .map(e => `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`)
-          .join(''))
-      : '';
+    const careForDate = renderCarePill(careByDate[date]);
 
-    const catsHtml = CATEGORIES.map((cat, catIdx) => {
-      if (!byDate[date][cat]) return '';
+    const catsHtml = CATEGORIES.map((cat) => {
+      if (!byDate[date] || !byDate[date][cat]) return '';
       const periods = Object.keys(byDate[date][cat]).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
-      const periodsHtml = periods.map((p, pi) => {
+      const periodsHtml = periods.map(p => {
         const items = byDate[date][cat][p];
-        const dotColor = items.some(e=>e.relative==='worse'||e.relative==='much-worse') ? 'var(--worse)'
-                       : items.some(e=>e.relative==='better'||e.relative==='much-better') ? 'var(--better)'
-                       : 'var(--same)';
-        return `<div class="timeline-entry">
-          <div class="tl-left">
-            <div class="tl-dot" style="background:${dotColor}"></div>
-            ${pi < periods.length-1 ? '<div class="tl-line"></div>' : ''}
-          </div>
-          <div class="tl-content">
-            <div class="tl-period">${periodName[p] || p}</div>
-            <div class="tl-symptoms">${items.map(renderEntryRow).join('')}</div>
-          </div>
-        </div>`;
+        return `<div class="session-pill-period">${periodName[p] || p}</div>
+          <div class="tl-symptoms">${items.map(renderEntryRow).join('')}</div>`;
       }).join('');
-      const isFirstCat = CATEGORIES.slice(0, catIdx).every(c => !byDate[date][c]);
-      return `<div class="date-cat-section${isFirstCat ? ' date-cat-first' : ''}">
-        <div class="date-cat-header">${cat}</div>
+      return `<div class="session-pill">
+        <div class="session-pill-cat" style="margin-top:0">${cat}</div>
         ${periodsHtml}
       </div>`;
     }).filter(Boolean).join('');
@@ -2767,14 +2771,12 @@ function renderTimelineSessions(entries, pinnedCategory) {
     });
   }
   const allDates = [...new Set([...Object.keys(byDate), ...Object.keys(careByDate)])];
-  return allDates.sort((a,b) => b.localeCompare(a)).map(date => {
+  return sortHistDates(allDates).map(date => {
     const d = new Date(date + 'T12:00:00');
     const dateStr = date === todayStr() ? 'Today'
       : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
 
-    const careForDate = (careByDate[date] || []).map(e =>
-      `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
-    ).join('');
+    const careForDate = renderCarePill(careByDate[date]);
 
     const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
     const pillsHtml = periods.map(p => {
@@ -2819,10 +2821,9 @@ function renderGroupedHistory(catFilter) {
     return;
   }
 
-  if (histGroupMode === 'timeline') {
+  if (histGroupMode === 'timeline' || catFilter) {
+    // Timeline mode, or a single category is pinned (Category-vs-Timeline is moot once Category is pinned)
     body.innerHTML = renderTimelineSessions(entries, catFilter || null);
-  } else if (catFilter) {
-    body.innerHTML = renderTimeline(entries);
   } else {
     body.innerHTML = renderDateFirstTimeline(entries);
   }
@@ -4109,14 +4110,12 @@ function renderFilteredHistory(symId) {
     return;
   }
 
-  body.innerHTML = allDates.sort((a,b) => b.localeCompare(a)).map(date => {
+  body.innerHTML = sortHistDates(allDates).map(date => {
     const d = new Date(date + 'T12:00:00');
     const dateStr = date === todayStr() ? 'Today'
       : d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
 
-    const careForDate = (careByDate[date] || []).map(e =>
-      `<div class="ce-row"><span class="ce-icon">${CE_ICON[e.category]||''}</span><span class="ce-name">${escapeHtml(e.typeName)}</span><span style="color:var(--subtext);font-size:12px;margin-left:auto">${e.category}</span></div>${e.notes?`<div class="ce-notes">${escapeHtml(e.notes)}</div>`:''}`
-    ).join('');
+    const careForDate = renderCarePill(careByDate[date]);
 
     const periods = Object.keys(byDate[date] || {}).sort((a,b) => (PERIOD_ORDER[a]||0)-(PERIOD_ORDER[b]||0));
     const pillsHtml = periods.map(p => {
