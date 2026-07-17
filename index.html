@@ -315,14 +315,12 @@ nav {
 .hgt-btn.hgt-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 
 .hist-controls-row { display: flex; gap: 6px; align-items: stretch; margin-bottom: 10px; }
-.hist-mode-toggle { display: flex; gap: 6px; flex-shrink: 0; }
-.hist-mode-toggle .hvb { flex: 0 0 40px; }
-.gearbox-btn { flex: 0 0 40px; }
+.hist-controls-row .hgt-btn, .hist-controls-row .hvb { flex: 1; }
 .gearbox-btn.hvb-active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 .hvb-labeled { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 600; }
 
 .display-panel { max-height: 0; overflow: hidden; transition: max-height .25s ease, margin-bottom .25s ease; margin-bottom: 0; }
-.display-panel.open { max-height: 420px; margin-bottom: 14px; }
+.display-panel.open { margin-bottom: 14px; }
 .display-panel-inner { padding-top: 2px; }
 
 /* EXPERIMENTAL (v11b): column-aligned trend/status pills */
@@ -956,14 +954,10 @@ nav {
       </select>
     </div>
     <div class="hist-controls-row">
-      <div class="hist-group-toggle" style="flex:1;margin-bottom:0">
-        <button class="hgt-btn hgt-active" id="hgt-timeline" onclick="setHistGroupMode('timeline')">Timeline</button>
-        <button class="hgt-btn" id="hgt-category" onclick="setHistGroupMode('category')">Category</button>
-      </div>
-      <div class="hist-mode-toggle">
-        <button class="hvb" id="hvb-text"  onclick="setHistMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-        <button class="hvb" id="hvb-graph" onclick="setHistMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
-      </div>
+      <button class="hgt-btn hgt-active" id="hgt-timeline" onclick="setHistGroupMode('timeline')">Timeline</button>
+      <button class="hgt-btn" id="hgt-category" onclick="setHistGroupMode('category')">Category</button>
+      <button class="hvb" id="hvb-text"  onclick="setHistMode('text')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+      <button class="hvb" id="hvb-graph" onclick="setHistMode('graph')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
       <button class="hvb gearbox-btn" id="gearbox-btn" onclick="toggleGearbox()" aria-label="Display options">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -1247,7 +1241,7 @@ let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
 const APP_VERSION = 'v44';
-const APP_BUILD_DATE = 'Jul 16, 2026 11:42 PM EDT'; // update on every deploy
+const APP_BUILD_DATE = 'Jul 16, 2026 11:57 PM EDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -2525,9 +2519,17 @@ function toggleGearbox() {
   const panel = document.getElementById('display-panel');
   const btn = document.getElementById('gearbox-btn');
   if (!panel) return;
-  const nowOpen = !panel.classList.contains('open');
-  panel.classList.toggle('open', nowOpen);
-  if (btn) btn.classList.toggle('hvb-active', nowOpen);
+  const willOpen = !panel.classList.contains('open');
+  if (willOpen) {
+    panel.classList.add('open');
+    panel.style.maxHeight = panel.scrollHeight + 'px';
+  } else {
+    panel.style.maxHeight = panel.scrollHeight + 'px'; // lock in current height first
+    void panel.offsetHeight; // force reflow so the browser registers the starting height
+    panel.style.maxHeight = '0px';
+    panel.classList.remove('open');
+  }
+  if (btn) btn.classList.toggle('hvb-active', willOpen);
 }
 function setSortOrder(order) {
   histSortOrder = order;
