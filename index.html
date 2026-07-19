@@ -985,9 +985,9 @@ nav {
         </div>
         <div class="hist-section-label">Time range</div>
         <div class="hist-display-group" style="margin-bottom:10px">
-          <button class="time-chip time-chip-active" data-period="all">All</button>
+          <button class="time-chip" data-period="all">All</button>
           <button class="time-chip" data-period="7d">7d</button>
-          <button class="time-chip" data-period="30d">30d</button>
+          <button class="time-chip time-chip-active" data-period="30d">30d</button>
           <button class="time-chip" data-period="90d">90d</button>
           <button class="time-chip" data-period="custom" onclick="openCalendar('history')">Custom</button>
         </div>
@@ -1250,8 +1250,8 @@ let showTrend = true;
 let showCareEvents = true;
 let currentEventDate = '';          // set to todayStr() after constants are defined
 // ══ Version info — update both on every deploy ══
-const APP_VERSION = 'v44';
-const APP_BUILD_DATE = 'Jul 17, 2026 4:09 PM EDT'; // update on every deploy
+const APP_VERSION = 'v48';
+const APP_BUILD_DATE = 'Jul 18, 2026 8:58 PM CDT'; // update on every deploy
 
 let appTheme = 'dark'; // 'dark' | 'light' | 'system'
 
@@ -1304,7 +1304,7 @@ let armedSymptomDeleteTimer = null;
 let histCatFilter = '';   // '' | 'General' | 'Symptoms' | 'Occurrences'
 let histSymFilter = '';   // '' | symId
 let histViewMode  = 'text'; // 'text' | 'graph' | 'trend'
-let histTimeFilter = 'all'; // 'all' | '7d' | '30d' | '90d'
+let histTimeFilter = '30d'; // 'all' | '7d' | '30d' | '90d'
 let histGroupMode = 'timeline'; // 'timeline' | 'category' — TEMP toggle for Step 1; real Tier-1 control comes in Step 3
 let histSortOrder = 'newest'; // 'newest' | 'oldest' — applies to date ordering across all History views
 let selectedGraphPointId = null;
@@ -1357,6 +1357,30 @@ function getTimeFilteredEntries(entries) {
   });
 }
 
+// Returns one shared {start, end} date range for the currently selected History time
+// filter — used so every chart (regardless of which symptom, or how much data it has)
+// is drawn at the same width and lines up. Falls back to null (caller uses the chart's
+// own data range instead) only if a shared range genuinely can't be determined yet
+// (e.g. Custom selected but no dates picked, or no data logged anywhere at all).
+function getHistDateRange() {
+  if (histTimeFilter === 'custom') {
+    if (!histCustomStart || !histCustomEnd) return null;
+    let s = histCustomStart, e = histCustomEnd;
+    if (s > e) [s, e] = [e, s];
+    return {start: s, end: e};
+  }
+  if (histTimeFilter === 'all') {
+    if (!state.entries.length) return null;
+    let start = state.entries[0].date, end = state.entries[0].date;
+    state.entries.forEach(e => { if (e.date < start) start = e.date; if (e.date > end) end = e.date; });
+    return {start, end};
+  }
+  const days = histTimeFilter === '7d' ? 7 : histTimeFilter === '30d' ? 30 : 90;
+  const end = todayStr();
+  const start = addDays(end, -days);
+  return {start, end};
+}
+
 const FACE_EMOJI = {terrible:'😖', poor:'😕', neutral:'😐', good:'🙂', great:'😀'};
 const FACE_LABEL = {terrible:'Terrible', poor:'Poor', neutral:'Neutral', good:'Good', great:'Great'};
 
@@ -1386,20 +1410,39 @@ function fmtDateTime(savedAt, dateStr) {
   return 'Unknown';
 }
 
-// Fixed clock-time anchors used for graph x-axis positioning only.
-// Keeps period-based entries evenly spaced regardless of when they were actually logged.
-const NOTIONAL_HOURS = { morning: 9, afternoon: 14, evening: 20, day: 12 };
+// ── Chart-only time-axis positioning ──────────────────────────────────────
+// These values are used ONLY to decide where a dot lands left-to-right on
+// a graph. They are intentionally separate from NOTIONAL_HOURS (above),
+// which drives sort order and All-day bucketing everywhere else in the app.
+// Safe to hand-edit these four numbers/buckets to retune chart spacing
+// without touching sort order or any other app behavior.
 
-// Returns the timestamp to use for GRAPH plotting.
-// Occurrences always use their real entered/saved time.
-// General & Symptoms entries use a notional time derived from date + period.
-function getPlotTs(e) {
-  if (e.category === 'Occurrences') {
-    return e.savedAt || new Date(e.date + 'T12:00:00').getTime();
-  }
-  const hour = NOTIONAL_HOURS[e.period] != null ? NOTIONAL_HOURS[e.period] : 12;
-  return new Date(e.date + 'T' + String(hour).padStart(2,'0') + ':00:00').getTime();
+// Morning/Afternoon/Evening entries (General & Symptoms) always plot at
+// these fixed clock hours, regardless of when they were actually logged.
+const CHART_INTRADAY_HOURS = { morning: 6, afternoon: 13, evening: 20 };
+
+// All-day entries (General & Symptoms, and Occurrences "None this period"
+// entries logged under All day) plot at one of these three marker hours,
+// chosen by which bucket the entry's actual saved clock time falls into.
+// Boundary times (exactly 1:00 PM / 8:00 PM) fall into the LATER bucket.
+const CHART_ALLDAY_BUCKETS = [
+  { from: 0,  to: 13, markerHour: 11 },  // midnight–1pm  -> 11am
+  { from: 13, to: 20, markerHour: 18 },  // 1pm–8pm       -> 6pm
+  { from: 20, to: 24, markerHour: 22 },  // 8pm–midnight  -> 10pm
+];
+
+function chartAllDayHour(entry) {
+  if (!entry.savedAt) return 12;
+  const d = new Date(entry.savedAt);
+  const hourFrac = d.getHours() + d.getMinutes() / 60;
+  const bucket = CHART_ALLDAY_BUCKETS.find(b => hourFrac >= b.from && hourFrac < b.to);
+  return bucket ? bucket.markerHour : CHART_ALLDAY_BUCKETS[CHART_ALLDAY_BUCKETS.length - 1].markerHour;
 }
+
+// Fixed clock-time anchors used for sort order and All-day bucketing
+// EVERYWHERE ELSE in the app (History text views, carousel default, etc).
+// Not used for chart positioning — see CHART_INTRADAY_HOURS/CHART_ALLDAY_BUCKETS above.
+const NOTIONAL_HOURS = { morning: 9, afternoon: 14, evening: 20, day: 12 };
 
 function todayStr() {
   const d = new Date();
@@ -1468,7 +1511,7 @@ function renderProfileBar() {
 function refreshAfterProfileChange() {
   draft = {}; currentStep = 0; sessionSnapshot = null; sessionDirty = false;
   discardEditMode();
-  histCatFilter = ''; histSymFilter = ''; histViewMode = 'text'; histTimeFilter = 'all';
+  histCatFilter = ''; histSymFilter = ''; histViewMode = 'text'; histTimeFilter = '30d';
   updateDateLabel();
   openCarousel();
   renderSymptoms();
@@ -1857,7 +1900,7 @@ function doSwitchScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(name + '-screen').classList.add('active');
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
-  if (name === 'history') { histTimeFilter = 'all'; renderHistory(); }
+  if (name === 'history') { histTimeFilter = '30d'; renderHistory(); }
   if (name === 'symptoms') renderSymptoms();
   if (name === 'events')   renderEventsScreen();
   if (name === 'export') {
@@ -2578,9 +2621,6 @@ function updateHistGroupToggle() {
   tCategory.className = 'seg-btn' + (histGroupMode === 'category' ? ' seg-active' : '');
 }
 function setHistMode(mode) {
-  const hasSym = !!histSymFilter;
-  const isCE   = histCatFilter === 'Care Events';
-  if (mode === 'graph' && !hasSym && !isCE) return; // Chart still needs a symptom
   histViewMode = mode;
   updateHistViewToggle();
   renderHistoryBody();
@@ -2594,7 +2634,6 @@ function toggleHistTrend() {
 function toggleHistCare()  { showCareEvents = !showCareEvents; updateHistViewToggle(); renderHistoryBody(); }
 
 function updateHistViewToggle() {
-  const hasSym = !!histSymFilter;
   const isCE   = histCatFilter === 'Care Events';
   const selSym = histSymFilter ? state.symptoms.find(s => s.id === histSymFilter) : null;
   const isOcc  = (selSym && selSym.category === 'Occurrences') || histCatFilter === 'Occurrences';
@@ -2605,7 +2644,7 @@ function updateHistViewToggle() {
   if (!tText) return;
   // Text is always active; Chart greyed unless symptom or care events selected
   tText.className  = 'seg-btn' + (histViewMode === 'text'  ? ' seg-active' : '');
-  tGraph.className = 'seg-btn' + (!hasSym && !isCE ? ' seg-disabled' : histViewMode === 'graph' ? ' seg-active' : '');
+  tGraph.className = 'seg-btn' + (histViewMode === 'graph' ? ' seg-active' : '');
   tTrend.className = 'hvb hvb-labeled' + (isOcc ? ' hvb-disabled' : (showTrend ? ' hvb-on' : ''));
   const trendLbl = tTrend.querySelector('.hvb-btn-label');
   if (trendLbl) trendLbl.textContent = 'Trend ' + (showTrend ? 'On' : 'Off');
@@ -2671,8 +2710,9 @@ function setSortOrderUI() {
 function renderHistoryBody() {
   if (histCatFilter === 'Care Events') { renderCareEventsHistory(); return; }
   if (histSymFilter && histViewMode === 'graph') { renderTrendGraph(histSymFilter, showTrend); return; }
+  if (histViewMode === 'graph') { renderChartStack(histCatFilter, showTrend); return; }
   if (histSymFilter) { renderFilteredHistory(histSymFilter); return; }
-  // No symptom selected: graph mode falls through to grouped text view
+  // No symptom selected and Text mode: grouped Timeline/Category text view
   renderGroupedHistory(histCatFilter);
 }
 
@@ -2969,51 +3009,33 @@ function getChartData(symId, filterFn) {
   const cat = sym.category || 'General';
 
   if (cat === 'Occurrences') {
-    // Occurrences: discrete on/off events. Reuses the calendar-grid point model
-    // (date/slot/isAllDay) like General/Symptoms, but with no missing-slot
-    // carry-forward (a gap just means "not logged", not "unknown value") and
-    // no trend/relative values (there's nothing continuous to trend).
+    // Occurrences: each entry becomes its own independent point — no slot
+    // bucketing, no collision logic. "Add occurrence" entries plot at their
+    // real saved clock time (precise, can differ entry-to-entry even within
+    // the same period). "None this period" entries are a period-level
+    // assertion, not an instant, so they use the same notional positioning
+    // as General/Symptoms All-day/intraday entries.
     const entries = filterFn(state.entries.filter(e => e.symptomId === symId));
-    const byDate = {};
-    entries.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
-    const dates = Object.keys(byDate).sort();
     const occY = e => e.occMode === 'none' ? 1 : 1.5;
 
-    let points = [];
-    dates.forEach(date => {
-      const dayEntries = byDate[date];
-      const intraday = {morning: null, afternoon: null, evening: null};
-      let allDayEntry = null;
-      dayEntries.forEach(e => {
-        if (e.period === 'day') {
-          if (!allDayEntry || (e.savedAt||0) > (allDayEntry.savedAt||0)) allDayEntry = e;
-        } else if (e.period in intraday) {
-          if (!intraday[e.period] || (e.savedAt||0) > (intraday[e.period].savedAt||0)) intraday[e.period] = e;
-        }
-      });
-      const usesSubPeriod = !!(intraday.morning || intraday.afternoon || intraday.evening);
-      const allDayBucket = allDayEntry ? bucketAllDayPeriod(allDayEntry) : null;
-
-      if (!usesSubPeriod) {
-        if (allDayEntry) {
-          points.push({date, slot: allDayBucket, y: occY(allDayEntry), id: allDayEntry.id, isAllDay: true, missing: false, relative: null});
-        }
-        return;
+    let points = entries.map(e => {
+      let chartHour;
+      if (e.occMode === 'none') {
+        chartHour = e.period === 'day' ? chartAllDayHour(e) : CHART_INTRADAY_HOURS[e.period];
+      } else {
+        const d = new Date(e.savedAt || Date.now());
+        chartHour = d.getHours() + d.getMinutes() / 60;
       }
-      ['morning', 'afternoon', 'evening'].forEach(slot => {
-        if (intraday[slot]) {
-          points.push({date, slot, y: occY(intraday[slot]), id: intraday[slot].id, isAllDay: false, missing: false, relative: null});
-        } else if (allDayEntry && allDayBucket === slot) {
-          points.push({date, slot, y: occY(allDayEntry), id: allDayEntry.id, isAllDay: true, missing: false, relative: null});
-        }
-        // No synthetic "missing" point — an unlogged slot just isn't plotted.
-      });
+      return {date: e.date, chartHour, y: occY(e), id: e.id, isAllDay: e.period === 'day', missing: false, relative: null};
     });
-    points.sort((a, b) => a.date === b.date ? SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] : a.date.localeCompare(b.date));
+
+    points.sort((a, b) => a.date === b.date ? a.chartHour - b.chartHour : a.date.localeCompare(b.date));
     return {sym, cat, points, calendarGrid: true};
   }
 
-  // General / Symptoms: reconcile all-day vs intraday entries per date, infer missing slots
+  // General / Symptoms: reconcile all-day vs intraday entries per date, infer missing slots.
+  // All-day entries now ALWAYS get their own point at their own chart hour —
+  // they never share a slot with (or get suppressed by) an intraday entry.
   const entries = filterFn(state.entries.filter(e => e.symptomId === symId));
   const byDate = {};
   entries.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
@@ -3033,35 +3055,30 @@ function getChartData(symId, filterFn) {
     });
 
     const usesSubPeriod = !!(intraday.morning || intraday.afternoon || intraday.evening);
-    const allDayBucket = allDayEntry ? bucketAllDayPeriod(allDayEntry) : null;
 
     function entryHasPlottableData(e) {
       // An entry is plottable if it has an absolute value OR a relative (trend) value
       return computeAbsoluteY(e, cat) !== null || (e.relative && e.relative !== '');
     }
 
-    if (!usesSubPeriod) {
-      if (allDayEntry && entryHasPlottableData(allDayEntry)) {
-        const y = computeAbsoluteY(allDayEntry, cat); // may be null (trend-only)
-        points.push({date, slot: allDayBucket, y, id: allDayEntry.id, isAllDay: true, missing: false, relative: allDayEntry.relative || null});
-      }
-      return;
+    if (allDayEntry && entryHasPlottableData(allDayEntry)) {
+      const y = computeAbsoluteY(allDayEntry, cat); // may be null (trend-only)
+      points.push({date, chartHour: chartAllDayHour(allDayEntry), y, id: allDayEntry.id, isAllDay: true, missing: false, relative: allDayEntry.relative || null});
     }
+
+    if (!usesSubPeriod) return;
 
     ['morning', 'afternoon', 'evening'].forEach(slot => {
       if (intraday[slot] && entryHasPlottableData(intraday[slot])) {
         const y = computeAbsoluteY(intraday[slot], cat);
-        points.push({date, slot, y, id: intraday[slot].id, isAllDay: false, missing: false, relative: intraday[slot].relative || null});
-      } else if (allDayEntry && allDayBucket === slot && entryHasPlottableData(allDayEntry)) {
-        const y = computeAbsoluteY(allDayEntry, cat);
-        points.push({date, slot, y, id: allDayEntry.id, isAllDay: true, missing: false, relative: allDayEntry.relative || null});
+        points.push({date, chartHour: CHART_INTRADAY_HOURS[slot], y, id: intraday[slot].id, isAllDay: false, missing: false, relative: intraday[slot].relative || null});
       } else {
-        points.push({date, slot, y: null, id: null, isAllDay: false, missing: true, relative: null});
+        points.push({date, chartHour: CHART_INTRADAY_HOURS[slot], y: null, id: null, isAllDay: false, missing: true, relative: null});
       }
     });
   });
 
-  points.sort((a, b) => a.date === b.date ? SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] : a.date.localeCompare(b.date));
+  points.sort((a, b) => a.date === b.date ? a.chartHour - b.chartHour : a.date.localeCompare(b.date));
 
   // Carry-forward fill for missing y values (step-after logic).
   // Entries with no absolute value use 0 as the assumed baseline until a real absolute is logged.
@@ -3266,22 +3283,27 @@ function buildTimeWeekStripes(tsMin, tsMax, xp, mt, ch) {
   return stripes.join('');
 }
 
-function renderTrendGraph(symId, showTrend) {
-  selectedGraphPointId = null;
-  const body = document.getElementById('history-body');
+// Builds the HTML for ONE symptom's chart block — header/legend/axis/dots.
+// Shared by the single-chart view (one symptom selected) and the multi-chart
+// stack (no symptom selected, more than one chart shown at once).
+// opts.showTitle: include this chart's own category/symptom heading (stack only —
+//   the single-chart view already gets its heading from the shared page header).
+// opts.forceScaffold: if true, a symptom with zero data in range still renders a
+//   correctly-scaled empty chart (axis + grid, no dots) instead of a text message,
+//   so every chart in the stack stays the same size and lines up.
+function buildChartBlockHTML(symId, showTrend, opts) {
+  opts = opts || {};
   const data = getChartData(symId);
-  if (!data) { body.innerHTML = ''; return; }
-  const {sym, cat, points, calendarGrid} = data;
+  if (!data) return '';
+  const {sym, cat, points} = data;
 
-  if (!points.length) {
-    body.innerHTML = `<div style="padding:30px 0;text-align:center;color:var(--subtext);font-size:14px">No plottable data yet — add some absolute values first.</div>`;
-    return;
+  if (!points.length && !opts.forceScaffold) {
+    return `<div style="padding:30px 0;text-align:center;color:var(--subtext);font-size:14px">No plottable data yet — add some absolute values first.</div>`;
   }
 
   const VH = 260, mt = 18, mb = 30;
   const ch = VH - mt - mb;
 
-  // Y axis (shared between both render paths)
   let yMin, yMax, yTicks, yLabelFn;
   if (cat === 'General') {
     yMin = -3.0; yMax = 2; yTicks = [-2,-1,0,1,2];
@@ -3299,65 +3321,16 @@ function renderTrendGraph(symId, showTrend) {
   const col = cat === 'General' ? '#6c8eff' : cat === 'Symptoms' ? '#f0c040' : '#3ecf8e';
   const realCount = points.filter(p => !p.missing).length;
 
-  if (!calendarGrid) {
-    // Occurrences — unchanged: single non-scrolling SVG, continuous time scale
-    const VW = 360, ml = 52, mr = 14;
-    const cw = VW - ml - mr;
-    const tsMin = points[0].ts, tsMax = points[points.length-1].ts;
-    const tsRange = tsMax - tsMin || 1;
-    const xp = ts => points.length === 1 ? ml + cw / 2 : ml + ((ts - tsMin) / tsRange) * cw;
-
-    const grid = yTicks.map(v => {
-      const y = yp(v).toFixed(1);
-      return `<line x1="${ml}" y1="${y}" x2="${VW-mr}" y2="${y}" stroke="#2e3348" stroke-width="1"/>
-              <text x="${ml-7}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#8890b0" font-size="11" font-family="-apple-system,sans-serif">${yLabelFn(v)}</text>`;
-    }).join('');
-
-    const n = points.length;
-    const tickCount = Math.min(5, n);
-    const tickIdx = tickCount === 1 ? [0] : Array.from({length: tickCount}, (_, i) => Math.round(i * (n-1) / (tickCount-1)));
-    const xLabels = [...new Set(tickIdx)].map(i => {
-      const p = points[i]; const x = xp(p.ts).toFixed(1);
-      const lbl = new Date(p.ts).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-      return `<line x1="${x}" y1="${(mt+ch).toFixed(1)}" x2="${x}" y2="${(mt+ch+4).toFixed(1)}" stroke="#2e3348" stroke-width="1"/>
-              <text x="${x}" y="${(mt+ch+16).toFixed(1)}" text-anchor="middle" fill="#8890b0" font-size="10" font-family="-apple-system,sans-serif">${lbl}</text>`;
-    }).join('');
-
-    const dots = points.map(p => {
-      const cx = parseFloat(xp(p.ts).toFixed(1)), cy = parseFloat(yp(p.y).toFixed(1));
-      const marker = `<circle cx="${cx}" cy="${cy}" r="5" fill="#21253a" stroke="${col}" stroke-width="1.8"/>`;
-      return `<g class="graph-point" data-entry-id="${p.id}"><circle class="graph-point-touch" cx="${cx}" cy="${cy}" r="14"/>${marker}</g>`;
-    }).join('');
-
-    const axes = `
-      <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ch}" stroke="#2e3348" stroke-width="1.5"/>
-      <line x1="${ml}" y1="${mt+ch}" x2="${VW-mr}" y2="${mt+ch}" stroke="#2e3348" stroke-width="1.5"/>`;
-
-    body.innerHTML = header +
-      `<div class="hist-sym-cat" style="margin-top:-4px">${realCount} data point${realCount!==1?'s':''}</div>
-      <div class="trend-graph-wrap" id="trend-graph-wrap">
-        <svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;overflow:visible">
-          ${points.length > 1 ? buildTimeWeekStripes(tsMin, tsMax, xp, mt, ch) : ''}${grid}${axes}${xLabels}${dots}
-        </svg>
-      </div>
-      <div id="graph-point-preview"></div>`;
-
-    const wrap = document.getElementById('trend-graph-wrap');
-    if (wrap) wrap.onclick = function(ev) {
-      const pt = ev.target.closest('.graph-point');
-      if (pt) renderGraphPointPreview(pt.dataset.entryId);
-    };
-    return;
-  }
-
-  // General / Symptoms — constant-density calendar grid, pinned Y-axis, horizontal scroll
+  // General / Symptoms / Occurrences all share one calendar-grid, horizontal-scroll design.
   const MIN_DAY_W = 50, padL = 20, padR = 20, mlFixed = 52;
-  const rangeStart = points[0].date, rangeEnd = points[points.length - 1].date;
+  const sharedRange = getHistDateRange();
+  const rangeStart = sharedRange ? sharedRange.start : (points[0] ? points[0].date : todayStr());
+  const rangeEnd = sharedRange ? sharedRange.end : (points.length ? points[points.length - 1].date : todayStr());
   const numDays = dayIndex(rangeStart, rangeEnd) + 1;
   const availW = (window.innerWidth || 360) - mlFixed - padL - padR;
   const DAY_W = Math.max(MIN_DAY_W, availW / numDays);
   const totalWidth = padL + numDays * DAY_W + padR;
-  const xFor = p => padL + dayIndex(rangeStart, p.date) * DAY_W + SLOT_FRACTION[p.slot] * DAY_W;
+  const xFor = p => padL + dayIndex(rangeStart, p.date) * DAY_W + (p.chartHour / 24) * DAY_W;
   const dayCenterX = d => padL + dayIndex(rangeStart, d) * DAY_W + DAY_W / 2;
 
   const yAxisSvg = `
@@ -3406,8 +3379,17 @@ function renderTrendGraph(symId, showTrend) {
 
   const careIcons = buildCareIconsSVG(rangeStart, rangeEnd, dayCenterX, mt, ch, 16, '#e63946', false);
 
-  body.innerHTML =
-    `<div style="display:flex;justify-content:flex-end;margin-top:-56px;margin-bottom:4px">
+  const titleHtml = opts.showTitle
+    ? `<div class="hist-sym-cat" style="margin-top:0">${escapeHtml(cat)}</div><div class="hist-sym-header" style="margin-bottom:8px">${escapeHtml(sym.name)}</div>`
+    : '';
+
+  const emptyNote = (!points.length && opts.forceScaffold)
+    ? `<div class="hist-sym-cat" style="opacity:0.7;margin-bottom:4px">No data in this range</div>`
+    : '';
+
+  return `<div class="chart-block" data-chart-symid="${symId}" style="margin-bottom:${opts.showTitle ? '28px' : '0'}">
+    ${titleHtml}
+    <div style="display:flex;justify-content:flex-end;margin-top:${opts.showTitle ? '-2px' : '-56px'};margin-bottom:4px">
       <div class="graph-legend">
         <div class="graph-legend-item">
           <svg width="11" height="11" viewBox="0 0 11 11">
@@ -3429,26 +3411,68 @@ function renderTrendGraph(symId, showTrend) {
     <div class="trend-graph-wrap">
       <div class="chart-flex">
         <div class="chart-yaxis-fixed">${yAxisSvg}</div>
-        <div class="chart-scroll" id="chart-scroll-area">
+        <div class="chart-scroll">
           <svg width="${totalWidth}" height="${VH}" viewBox="0 0 ${totalWidth} ${VH}" style="display:block">
             ${numDays > 7 ? buildWeekStripes(rangeStart, numDays, DAY_W, padL, mt, ch) : ''}${grid}${zeroRef}${axesBottom}${xLabels}${path}${careIcons}${dots}
           </svg>
         </div>
       </div>
     </div>
+    ${emptyNote}
     <div class="hist-sym-cat" style="margin-top:6px">${realCount} data point${realCount!==1?'s':''} · ${numDays} day${numDays!==1?'s':''}</div>
-    <div id="graph-point-preview"></div>`;
+  </div>`;
+}
 
-  const wrap = document.querySelector('.trend-graph-wrap');
-  if (wrap) wrap.onclick = function(ev) {
+// Wires up tap-to-preview (on every chart point / care icon, delegated so it works for
+// any number of stacked chart blocks) and auto-scrolls every chart to its most recent data.
+function wireUpChartInteractions(container) {
+  container.onclick = function(ev) {
     const pt = ev.target.closest('.graph-point');
     if (pt) { renderGraphPointPreview(pt.dataset.entryId); return; }
     const cp = ev.target.closest('.care-point');
     if (cp) { renderCareEventPreview(cp.dataset.careEventId); return; }
   };
+  container.querySelectorAll('.chart-scroll').forEach(scrollArea => {
+    requestAnimationFrame(() => { scrollArea.scrollLeft = scrollArea.scrollWidth; });
+  });
+}
 
-  const scrollArea = document.getElementById('chart-scroll-area');
-  if (scrollArea) requestAnimationFrame(() => { scrollArea.scrollLeft = scrollArea.scrollWidth; });
+// Single-symptom chart view (histSymFilter set). Heading comes from the shared
+// page header above history-body, so this chart doesn't repeat its own title.
+function renderTrendGraph(symId, showTrend) {
+  selectedGraphPointId = null;
+  const body = document.getElementById('history-body');
+  const html = buildChartBlockHTML(symId, showTrend, {showTitle: false, forceScaffold: false});
+  body.innerHTML = html + `<div id="graph-point-preview"></div>`;
+  wireUpChartInteractions(body);
+}
+
+// Multi-chart stack (no single symptom selected — "All entries" or one category
+// pinned). One full chart per symptom currently in scope, ordered category then
+// symptom (same order as Timeline/Category), all sharing one time axis (see
+// getHistDateRange). Care Events appear as markers on each symptom's own chart,
+// same as the single-chart view — no separate Care Events block here.
+function renderChartStack(catFilter, showTrend) {
+  selectedGraphPointId = null;
+  const body = document.getElementById('history-body');
+  const cats = catFilter ? [catFilter] : CATEGORIES;
+  let symIds = [];
+  cats.forEach(cat => {
+    state.symptoms.filter(s => (s.category || 'General') === cat).forEach(s => symIds.push(s.id));
+  });
+
+  if (!symIds.length) {
+    body.innerHTML = `<div class="empty-state" style="padding-top:60px">
+      <div class="empty-icon">📈</div>
+      <h3>No symptoms to chart</h3>
+      <p>Add a symptom in Setup to see it here.</p>
+    </div>`;
+    return;
+  }
+
+  const blocks = symIds.map(id => buildChartBlockHTML(id, showTrend, {showTitle: true, forceScaffold: true})).join('');
+  body.innerHTML = blocks + `<div id="graph-point-preview"></div>`;
+  wireUpChartInteractions(body);
 }
 
 // ══ Print ══
